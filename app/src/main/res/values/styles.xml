@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="SelectablePill" parent="Widget.Material3.Chip.Assist">
+        <!-- bắt buộc để có trạng thái checked -->
+        <item name="android:checkable">true</item>                  <!-- quan trọng -->
+        <item name="checkedIconVisible">false</item>
+
+        <!-- size & touch target -->
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">48dp</item>
+        <item name="chipMinHeight">48dp</item>
+        <item name="ensureMinTouchTargetSize">true</item>
+
+        <!-- màu -->
+        <item name="chipBackgroundColor">@color/pill_bg_selector</item>
+        <item name="android:textColor">@color/pill_text_selector</item>
+        <item name="chipCornerRadius">22dp</item>
+        <item name="chipStrokeWidth">0dp</item>
+        <item name="chipIconVisible">false</item>
+        <item name="rippleColor">@null</item>
+        <item name="textAllCaps">false</item>
+    </style>
+
+    <style name="SelectablePillWide" parent="SelectablePill">
+        <item name="android:paddingLeft">22dp</item>
+        <item name="android:paddingRight">22dp</item>
+    </style>
+
+
+</resources>

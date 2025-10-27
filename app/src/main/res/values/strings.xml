@@ -1,0 +1,37 @@
+<resources>
+    <string name="app_name">EduConnect</string>
+    <string name="attendance_title">Điểm danh</string>
+    <string name="subject_fmt">Môn: %1$s</string>
+    <string name="time_fmt">Thời gian: %1$s</string>
+    <string name="class_fmt">Lớp: %1$s</string>
+    <string name="save">Lưu</string>
+    <string name="cancel">Hủy</string>
+    <string name="back">Quay lại</string>
+    <string name="saved_n">Đã lưu điểm danh (%1$d HS)</string>
+
+    <string name="study_attitude_title">Thái độ học tập của học sinh</string>
+    <string name="very_good">Rất tốt</string>
+    <string name="good">Tốt</string>
+    <string name="average">Trung bình</string>
+    <string name="poor">Kém</string>
+
+    <string name="prep_title">Chuẩn bị bài học trước khi đến lớp</string>
+    <string name="prep_good">Hoàn thành bài tốt</string>
+    <string name="prep_has">Có chuẩn bị bài</string>
+    <string name="prep_improve">Cần cải thiện thêm</string>
+    <string name="prep_none">Chưa chuẩn bị bài</string>
+
+    <string name="note_title">Ghi chú</string>
+    <string name="note_hint">Nhận xét việc học trên lớp của học sinh.</string>
+    <string name="class_list">Danh sách lớp</string>
+    <string name="student_name_sample">Phạm Minh D</string>
+    <string name="student_dob_fmt">Ngày sinh: %1$s</string>
+    <string name="dob_sample">30 tháng 3, 2011</string>
+
+    <string name="dashboard_title">Bảng Thông Báo</string>
+    <string name="students">Học sinh</string>
+    <string name="today_periods">Tiết học hôm nay</string>
+    <string name="reports">Báo cáo</string>
+    <string name="no_absent">Hiện tại không có học sinh vắng mặt</string>
+
+</resources>

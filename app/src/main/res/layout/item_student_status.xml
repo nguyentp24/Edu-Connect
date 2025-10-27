@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="78dp"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:background="@drawable/bg_student_row"
+    android:paddingLeft="16dp"
+    android:paddingRight="16dp"
+    android:layout_marginBottom="12dp">
+
+    <TextView
+        android:id="@+id/tvName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="Nguyễn Văn A"
+        android:textColor="@color/tertiary"
+        android:textSize="16sp"
+        android:textStyle="bold"/>
+
+    <!-- Nút trạng thái pill -->
+    <com.google.android.material.chip.Chip
+        android:id="@+id/chipStatus"
+        style="@style/Widget.Material3.Chip.Assist"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        android:text="Có mặt"
+        android:textColor="@color/primary"
+        app:chipIconTint="@color/primary"
+        app:chipIcon="@drawable/ic_check"
+        app:chipBackgroundColor="@color/green"
+        app:ensureMinTouchTargetSize="false" />
+</LinearLayout>

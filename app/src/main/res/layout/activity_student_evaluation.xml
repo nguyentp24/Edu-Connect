@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/primary">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="16dp"
+        android:clipToPadding="false"
+        android:layout_marginBottom="96dp"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Title -->
+            <TextView
+                android:id="@+id/tvTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/study_attitude_title"
+                android:textStyle="bold"
+                android:textSize="22sp"
+                android:textColor="@color/tertiary"/>
+
+            <!-- Nhóm 1 -->
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/groupAttitude"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                app:singleSelection="true"
+                app:selectionRequired="true"
+                app:chipSpacingHorizontal="12dp"
+                app:chipSpacingVertical="12dp">
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipVeryGood"
+                    style="@style/SelectablePill"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:text="@string/very_good"/>
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipGood"
+                    style="@style/SelectablePill"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:text="@string/good"
+                    android:checked="true"
+                    android:checkable="true"/>
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipAverage"
+                    style="@style/SelectablePill"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:text="@string/average"/>
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipPoor"
+                    style="@style/SelectablePill"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:text="@string/poor"/>
+            </com.google.android.material.chip.ChipGroup>
+
+            <!-- Section 2 title -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:text="@string/prep_title"
+                android:textStyle="bold"
+                android:textSize="22sp"
+                android:textColor="@color/tertiary"/>
+
+            <!-- Nhóm 2 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginTop="12dp">
+
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/groupPreparation"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:singleSelection="true"
+                    app:selectionRequired="true"
+                    app:chipSpacingVertical="14dp">
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipPrepGood"
+                        style="@style/SelectablePillWide"
+                        android:layout_width="wrap_content"
+                        android:layout_height="48dp"
+                        android:text="@string/prep_good"/>
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipPrepHas"
+                        style="@style/SelectablePillWide"
+                        android:layout_width="wrap_content"
+                        android:layout_height="48dp"
+                        android:text="@string/prep_has"
+                        android:checked="true"/>
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipPrepImprove"
+                        style="@style/SelectablePillWide"
+                        android:layout_width="wrap_content"
+                        android:layout_height="48dp"
+                        android:text="@string/prep_improve"/>
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipPrepNone"
+                        style="@style/SelectablePillWide"
+                        android:layout_width="wrap_content"
+                        android:layout_height="48dp"
+                        android:text="@string/prep_none"/>
+                </com.google.android.material.chip.ChipGroup>
+            </LinearLayout>
+
+            <!-- Ghi chú -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:text="@string/note_title"
+                android:textStyle="bold"
+                android:textSize="20sp"
+                android:textColor="@color/tertiary"/>
+
+            <EditText
+                android:id="@+id/edtNote"
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                android:layout_marginTop="12dp"
+                android:padding="16dp"
+                android:hint="@string/note_hint"
+                android:background="@drawable/bg_note_box"
+                android:gravity="top|start"
+                android:inputType="textMultiLine|textCapSentences"
+                android:autofillHints="notes"
+                android:minLines="6"
+                android:maxLines="10"
+                android:textColor="@color/tertiary"
+                android:textColorHint="#6B7280"
+                android:textSize="16sp"/>
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- Nút Lưu đáy -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnSave"
+        style="@style/Widget.Material3.Button"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:layout_gravity="bottom"
+        android:layout_margin="16dp"
+        android:text="@string/save"
+        android:textAllCaps="false"
+        android:textStyle="bold"
+        android:textSize="20sp"
+        android:backgroundTint="@color/brand"
+        android:textColor="@color/primary"
+        app:shapeAppearance="?attr/shapeAppearanceCornerLarge"/>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
