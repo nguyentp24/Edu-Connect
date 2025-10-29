@@ -123,4 +123,15 @@
         android:paddingRight="16dp"
         android:paddingTop="8dp"
         android:clipToPadding="false"/>
+
+    <!-- Nút + góc dưới phải -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabAdd"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="20dp"
+        app:tint="@color/primary"
+        app:backgroundTint="@color/brand"
+        app:srcCompat="@drawable/ic_add" />
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

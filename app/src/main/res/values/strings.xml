@@ -34,4 +34,9 @@
     <string name="reports">Báo cáo</string>
     <string name="no_absent">Hiện tại không có học sinh vắng mặt</string>
 
+    <string name="add_student">Thêm học sinh</string>
+    <string name="student_name">Họ và tên</string>
+    <string name="student_dob">Ngày sinh</string>
+    <string name="add">Add</string>
+
 </resources>
