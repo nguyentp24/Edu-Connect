@@ -11,6 +11,11 @@ public class SessionManager {
     private static final String KEY_EMAIL = "email";
     private static final String KEY_ROLE = "role";
     private static final String KEY_IS_LOGGED_IN = "isLoggedIn";
+    // Teacher details
+    private static final String KEY_TEACHER_ID = "teacherId";
+    private static final String KEY_PHONE = "phone";
+    private static final String KEY_AVATAR = "avatar";
+    private static final String KEY_COURSES_JSON = "courses_json";
 
     private SharedPreferences pref;
     private SharedPreferences.Editor editor;
@@ -32,6 +37,23 @@ public class SessionManager {
         editor.putBoolean(KEY_IS_LOGGED_IN, true);
         editor.apply();
     }
+
+    // Lưu thông tin Teacher sau khi login
+    public void saveTeacher(String teacherId, String phone, String avatar) {
+        editor.putString(KEY_TEACHER_ID, teacherId);
+        editor.putString(KEY_PHONE, phone);
+        editor.putString(KEY_AVATAR, avatar);
+        editor.apply();
+    }
+
+    public String getTeacherId() { return pref.getString(KEY_TEACHER_ID, null); }
+    public String getPhone() { return pref.getString(KEY_PHONE, null); }
+    public String getAvatar() { return pref.getString(KEY_AVATAR, null); }
+    public void saveCoursesJson(String coursesJson) {
+        editor.putString(KEY_COURSES_JSON, coursesJson);
+        editor.apply();
+    }
+    public String getCoursesJson() { return pref.getString(KEY_COURSES_JSON, null); }
 
     // Kiểm tra đã đăng nhập chưa
     public boolean isLoggedIn() {

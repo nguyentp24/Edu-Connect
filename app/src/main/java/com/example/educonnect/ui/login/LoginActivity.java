@@ -54,8 +54,8 @@ public class LoginActivity extends AppCompatActivity {
                             loginResponse.email,
                             loginResponse.role
                     );
-                    startActivity(new Intent(LoginActivity.this, MainActivity.class));
-                    finish();
+                    // Sau khi login thành công -> gọi API lấy thông tin Teacher
+                    fetchTeacherAndGo(loginResponse.userId, loginResponse.token);
                 } else {
                     Toast.makeText(LoginActivity.this, "Đăng nhập thất bại: " + response.code(), Toast.LENGTH_SHORT).show();
                 }
@@ -64,6 +64,50 @@ public class LoginActivity extends AppCompatActivity {
             @Override public void onFailure(Call<LoginResponse> call, Throwable t) {
                 setLoading(false);
                 Toast.makeText(LoginActivity.this, "Lỗi mạng: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void fetchTeacherAndGo(String userId, String token) {
+        ApiClient.ApiService api = ApiClient.service();
+        api.getTeacher(userId, "Bearer " + token).enqueue(new retrofit2.Callback<com.example.educonnect.model.Teacher>() {
+            @Override public void onResponse(retrofit2.Call<com.example.educonnect.model.Teacher> call, retrofit2.Response<com.example.educonnect.model.Teacher> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    com.example.educonnect.model.Teacher t = response.body();
+                    sessionManager.saveTeacher(t.teacherId, t.phoneNumber, t.userImage);
+                    // Sau khi lấy teacher -> lấy luôn danh sách courses theo teacherId và lưu
+                    fetchCoursesByTeacherAndGo(t.teacherId, token);
+                    return;
+                }
+                // fallback
+                startActivity(new Intent(LoginActivity.this, MainActivity.class));
+                finish();
+            }
+
+            @Override public void onFailure(retrofit2.Call<com.example.educonnect.model.Teacher> call, Throwable t) {
+                // Nếu lỗi, vẫn cho vào app với thông tin login đã có
+                startActivity(new Intent(LoginActivity.this, MainActivity.class));
+                finish();
+            }
+        });
+    }
+
+    private void fetchCoursesByTeacherAndGo(String teacherId, String token) {
+        ApiClient.ApiService api = ApiClient.service();
+        api.getCoursesByTeacher(teacherId, "Bearer " + token).enqueue(new retrofit2.Callback<java.util.List<com.example.educonnect.model.Course>>() {
+            @Override public void onResponse(retrofit2.Call<java.util.List<com.example.educonnect.model.Course>> call, retrofit2.Response<java.util.List<com.example.educonnect.model.Course>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    com.google.gson.Gson gson = new com.google.gson.Gson();
+                    String json = gson.toJson(response.body());
+                    sessionManager.saveCoursesJson(json);
+                }
+                startActivity(new Intent(LoginActivity.this, MainActivity.class));
+                finish();
+            }
+
+            @Override public void onFailure(retrofit2.Call<java.util.List<com.example.educonnect.model.Course>> call, Throwable t) {
+                startActivity(new Intent(LoginActivity.this, MainActivity.class));
+                finish();
             }
         });
     }
