@@ -166,15 +166,15 @@ public class TimeTableFragment extends Fragment {
                     String start = formatTime(c.startTime);
                     String end   = formatTime(c.endTime);
                     boolean attended = c.status != null && c.status.equalsIgnoreCase("present");
-                    list.add(new ScheduleItem(start, end, c.subjectName, c.classId, "Đã kết thúc", attended));
+                    list.add(new ScheduleItem(start, end, c.startTime, c.endTime, c.subjectName, c.classId, "", attended));
                 }
             }
         }
 
         // sắp xếp theo thời gian bắt đầu tăng dần
         java.util.Collections.sort(list, (a, b) -> Integer.compare(
-                timeMinutesIso(findIsoOfStart(a.start)),
-                timeMinutesIso(findIsoOfStart(b.start))
+                timeMinutesIso(a.startIso),
+                timeMinutesIso(b.startIso)
         ));
 
         vb.rvSchedules.setLayoutManager(new LinearLayoutManager(getContext()));
@@ -251,22 +251,7 @@ public class TimeTableFragment extends Fragment {
         return h * 60 + m;
     }
 
-    // Convert from displayed start like "7:50 SA" to a fake ISO for sorting same format
-    private String findIsoOfStart(String display) {
-        // display always built from formatTime so we can reverse safely
-        try {
-            String[] parts = display.split(" "); // [h:mm, SA/CH]
-            String[] hm = parts[0].split(":");
-            int h = Integer.parseInt(hm[0]);
-            int m = Integer.parseInt(hm[1]);
-            boolean isCH = parts.length > 1 && "CH".equals(parts[1]);
-            if (isCH && h != 12) h += 12;
-            if (!isCH && h == 12) h = 0;
-            return String.format(java.util.Locale.US, "0000-01-01T%02d:%02d:00", h, m);
-        } catch (Exception e) {
-            return "0000-01-01T00:00:00";
-        }
-    }
+    // bỏ vì đã dùng startIso thực
 
     private int dp(int value) {
         float density = getResources().getDisplayMetrics().density;
