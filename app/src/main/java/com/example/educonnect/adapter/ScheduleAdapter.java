@@ -34,6 +34,15 @@ public class ScheduleAdapter extends RecyclerView.Adapter<ScheduleAdapter.VH> {
         h.vb.txtStatus.setText(it.status);
         h.vb.txtClass.setText("Lớp: " + it.klass);
         h.vb.txtAttendance.setText(it.attended ? "Đã điểm danh" : "Chưa điểm danh");
+        int color = it.attended ? h.vb.getRoot().getContext().getColor(com.example.educonnect.R.color.green)
+                                 : h.vb.getRoot().getContext().getColor(com.example.educonnect.R.color.red);
+        h.vb.txtAttendance.setTextColor(color);
+
+        android.view.View dot = h.vb.getRoot().findViewById(com.example.educonnect.R.id.dotStatus);
+        if (dot != null) {
+            dot.setBackgroundResource(it.attended ? com.example.educonnect.R.drawable.dot_green
+                                                  : com.example.educonnect.R.drawable.dot_red);
+        }
 
         h.vb.getRoot().setOnClickListener(v -> {
             if (onItemClick != null) onItemClick.onClick(it);

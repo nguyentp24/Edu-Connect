@@ -165,10 +165,17 @@ public class TimeTableFragment extends Fragment {
                 if (isSameDayIso(c.startTime, selectedDate)) {
                     String start = formatTime(c.startTime);
                     String end   = formatTime(c.endTime);
-                    list.add(new ScheduleItem(start, end, c.subjectName, c.classId, "Đã kết thúc", false));
+                    boolean attended = c.status != null && c.status.equalsIgnoreCase("present");
+                    list.add(new ScheduleItem(start, end, c.subjectName, c.classId, "Đã kết thúc", attended));
                 }
             }
         }
+
+        // sắp xếp theo thời gian bắt đầu tăng dần
+        java.util.Collections.sort(list, (a, b) -> Integer.compare(
+                timeMinutesIso(findIsoOfStart(a.start)),
+                timeMinutesIso(findIsoOfStart(b.start))
+        ));
 
         vb.rvSchedules.setLayoutManager(new LinearLayoutManager(getContext()));
         vb.rvSchedules.setAdapter(new ScheduleAdapter(list, item -> {
@@ -221,13 +228,44 @@ public class TimeTableFragment extends Fragment {
 
     private String formatTime(String iso) {
         if (iso == null || !iso.contains("T")) return "";
-        String hm = iso.substring(iso.indexOf('T') + 1, Math.min(iso.length(), iso.indexOf('T') + 5));
+        int t = iso.indexOf('T');
+        int end = Math.min(iso.length(), t + 6); // HH:mm
+        String hm = iso.substring(t + 1, end);
         String[] sp = hm.split(":");
         int h = Integer.parseInt(sp[0]);
         int min = Integer.parseInt(sp[1]);
         String suffix = h < 12 ? "SA" : "CH";
         int h12 = h % 12; if (h12 == 0) h12 = 12;
         return h12 + ":" + (min < 10 ? "0" + min : min) + " " + suffix;
+    }
+
+    // Lấy tổng phút từ đầu ngày cho chuỗi ISO, phục vụ sắp xếp
+    private int timeMinutesIso(String iso) {
+        if (iso == null || !iso.contains("T")) return 0;
+        int t = iso.indexOf('T');
+        int end = Math.min(iso.length(), t + 6);
+        String hm = iso.substring(t + 1, end); // HH:mm
+        String[] sp = hm.split(":");
+        int h = Integer.parseInt(sp[0]);
+        int m = Integer.parseInt(sp[1]);
+        return h * 60 + m;
+    }
+
+    // Convert from displayed start like "7:50 SA" to a fake ISO for sorting same format
+    private String findIsoOfStart(String display) {
+        // display always built from formatTime so we can reverse safely
+        try {
+            String[] parts = display.split(" "); // [h:mm, SA/CH]
+            String[] hm = parts[0].split(":");
+            int h = Integer.parseInt(hm[0]);
+            int m = Integer.parseInt(hm[1]);
+            boolean isCH = parts.length > 1 && "CH".equals(parts[1]);
+            if (isCH && h != 12) h += 12;
+            if (!isCH && h == 12) h = 0;
+            return String.format(java.util.Locale.US, "0000-01-01T%02d:%02d:00", h, m);
+        } catch (Exception e) {
+            return "0000-01-01T00:00:00";
+        }
     }
 
     private int dp(int value) {
