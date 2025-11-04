@@ -40,8 +40,8 @@ public class LoginActivity extends AppCompatActivity {
         ApiClient.ApiService api = ApiClient.service();
         api.login(new LoginRequest(email, pass)).enqueue(new Callback<JsonObject>() {
             @Override public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
+                setLoading(false);
                 if (response.isSuccessful()) {
-                    setLoading(false);
                     startActivity(new Intent(LoginActivity.this, MainActivity.class));
                     finish();
                 } else {
