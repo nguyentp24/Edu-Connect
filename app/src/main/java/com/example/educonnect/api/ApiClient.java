@@ -1,6 +1,7 @@
 package com.example.educonnect.api;
 
-import com.google.gson.JsonObject;
+import com.example.educonnect.model.request.LoginRequest;
+import com.example.educonnect.model.response.LoginResponse;
 import retrofit2.Call;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
@@ -37,7 +38,7 @@ public final class ApiClient {
     public interface ApiService {
         // Login: POST /api/Auth/Login
         @POST("api/Auth/Login")
-        Call<JsonObject> login(@Body com.example.educonnect.model.LoginRequest body);
+        Call<LoginResponse> login(@Body LoginRequest body);
     }
 }
 

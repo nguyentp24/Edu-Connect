@@ -13,10 +13,13 @@ import androidx.fragment.app.Fragment;
 
 import com.example.educonnect.databinding.FragmentProfileBinding;
 import com.example.educonnect.ui.profile.ClassListActivity;
+import com.example.educonnect.ui.login.LoginActivity;
+import com.example.educonnect.utils.SessionManager;
 
 public class ProfileFragment extends Fragment {
 
     private FragmentProfileBinding vb;
+    private SessionManager sessionManager;
 
     @Nullable
     @Override
@@ -31,9 +34,25 @@ public class ProfileFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // gán text demo
-        vb.txtName.setText("Văn A Nguyễn");
-        vb.txtEmail.setText("teacher1@gmail.com");
+        sessionManager = new SessionManager(requireContext());
+        
+        // Lấy thông tin từ SessionManager và hiển thị
+        String fullName = sessionManager.getFullName();
+        String email = sessionManager.getEmail();
+        
+        if (fullName != null && !fullName.isEmpty()) {
+            vb.txtName.setText(fullName);
+        } else {
+            vb.txtName.setText("N/A");
+        }
+        
+        if (email != null && !email.isEmpty()) {
+            vb.txtEmail.setText(email);
+        } else {
+            vb.txtEmail.setText("N/A");
+        }
+        
+        // Giữ thông tin lớp học và năm học (có thể lấy từ API sau)
         vb.txtClassTitle.setText("10A1 - Lớp 10A1");
         vb.txtSchoolYear.setText("Năm học: 2025 - 2026");
 
@@ -41,14 +60,22 @@ public class ProfileFragment extends Fragment {
         vb.classItem.setOnClickListener(v -> {
             Intent i = new Intent(requireContext(), com.example.educonnect.ui.profile.ClassListActivity.class);
             i.putExtra("klass", "10A1");
-            i.putExtra("teacher", "Nguyễn Văn A");
+            String teacherName = fullName != null ? fullName : "Nguyễn Văn A";
+            i.putExtra("teacher", teacherName);
             i.putExtra("year", "2025-2026");
             startActivity(i);
         });
 
-        vb.btnLogout.setOnClickListener(v ->
-                Toast.makeText(requireContext(), "Đăng xuất", Toast.LENGTH_SHORT).show()
-        );
+        // Xử lý đăng xuất
+        vb.btnLogout.setOnClickListener(v -> {
+            sessionManager.logout();
+            Intent intent = new Intent(requireContext(), LoginActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            if (getActivity() != null) {
+                getActivity().finish();
+            }
+        });
     }
 
 

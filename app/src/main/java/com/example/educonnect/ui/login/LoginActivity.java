@@ -9,21 +9,24 @@ import android.widget.Toast;
 import com.example.educonnect.databinding.ActivityLoginBinding;
 import com.example.educonnect.ui.main.MainActivity;
 import com.example.educonnect.api.ApiClient;
-import com.example.educonnect.model.LoginRequest;
+import com.example.educonnect.model.request.LoginRequest;
+import com.example.educonnect.model.response.LoginResponse;
+import com.example.educonnect.utils.SessionManager;
 
-import com.google.gson.JsonObject;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
 public class LoginActivity extends AppCompatActivity {
     private ActivityLoginBinding vb;
+    private SessionManager sessionManager;
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         vb = ActivityLoginBinding.inflate(getLayoutInflater());
         setContentView(vb.getRoot());
 
+        sessionManager = new SessionManager(this);
         vb.btnSignIn.setOnClickListener(v -> doLogin());
     }
 
@@ -38,10 +41,19 @@ public class LoginActivity extends AppCompatActivity {
         setLoading(true);
 
         ApiClient.ApiService api = ApiClient.service();
-        api.login(new LoginRequest(email, pass)).enqueue(new Callback<JsonObject>() {
-            @Override public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
-                if (response.isSuccessful()) {
-                    setLoading(false);
+        api.login(new LoginRequest(email, pass)).enqueue(new Callback<LoginResponse>() {
+            @Override public void onResponse(Call<LoginResponse> call, Response<LoginResponse> response) {
+                setLoading(false);
+                if (response.isSuccessful() && response.body() != null) {
+                    LoginResponse loginResponse = response.body();
+                    // Lưu thông tin đăng nhập vào SharedPreferences
+                    sessionManager.saveLoginSession(
+                            loginResponse.token,
+                            loginResponse.userId,
+                            loginResponse.fullName,
+                            loginResponse.email,
+                            loginResponse.role
+                    );
                     startActivity(new Intent(LoginActivity.this, MainActivity.class));
                     finish();
                 } else {
@@ -49,7 +61,7 @@ public class LoginActivity extends AppCompatActivity {
                 }
             }
 
-            @Override public void onFailure(Call<JsonObject> call, Throwable t) {
+            @Override public void onFailure(Call<LoginResponse> call, Throwable t) {
                 setLoading(false);
                 Toast.makeText(LoginActivity.this, "Lỗi mạng: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
