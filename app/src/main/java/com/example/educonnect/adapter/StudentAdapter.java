@@ -38,12 +38,31 @@ public class StudentAdapter extends RecyclerView.Adapter<StudentAdapter.VH> {
 
         // Bắt tên (string) để dùng trong lambda, tránh bắt cả đối tượng st
         final String studentName = st.name;
+        final String note = (st.note != null && !st.note.isEmpty() && !st.note.equals("no")) ? st.note : "";
+        final String homework = (st.homework != null && !st.homework.isEmpty() && !st.homework.equals("no")) ? st.homework : "";
+        final String focus = (st.focus != null && !st.focus.isEmpty() && !st.focus.equals("no")) ? st.focus : "";
+        final int position = pos; // Lưu position để cập nhật sau
 
         // Mở trang "Thái độ học tập" khi bấm vào tên
         h.vb.tvName.setOnClickListener(v -> {
-            Intent i = new Intent(ctx, com.example.educonnect.ui.attendance.StudentEvaluationActivity.class);
-            i.putExtra("student_name", studentName);
-            ctx.startActivity(i);
+            // Kiểm tra xem context có phải Activity không để dùng startActivityForResult
+            if (ctx instanceof android.app.Activity) {
+                android.app.Activity activity = (android.app.Activity) ctx;
+                Intent i = new Intent(ctx, com.example.educonnect.ui.attendance.StudentEvaluationActivity.class);
+                i.putExtra("student_name", studentName);
+                i.putExtra("note", note);
+                i.putExtra("homework", homework);
+                i.putExtra("focus", focus);
+                activity.startActivityForResult(i, position);
+            } else {
+                // Fallback nếu không phải Activity
+                Intent i = new Intent(ctx, com.example.educonnect.ui.attendance.StudentEvaluationActivity.class);
+                i.putExtra("student_name", studentName);
+                i.putExtra("note", note);
+                i.putExtra("homework", homework);
+                i.putExtra("focus", focus);
+                ctx.startActivity(i);
+            }
         });
 
         // Đổi trạng thái điểm danh khi bấm chip

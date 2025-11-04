@@ -141,7 +141,9 @@ public class TimeTableFragment extends Fragment {
 
     /** Tìm index của chip selected */
     private int findSelectedIndex() {
-        for (int i = 0; i < days.size(); i++) if (days.get(i).selected) return i;
+        for (int i = 0; i < days.size(); i++)
+            if (days.get(i).selected)
+                return i;
         return -1;
     }
 
@@ -166,7 +168,7 @@ public class TimeTableFragment extends Fragment {
                     String start = formatTime(c.startTime);
                     String end   = formatTime(c.endTime);
                     boolean attended = c.status != null && c.status.equalsIgnoreCase("present");
-                    list.add(new ScheduleItem(start, end, c.startTime, c.endTime, c.subjectName, c.classId, "", attended));
+                    list.add(new ScheduleItem(start, end, c.startTime, c.endTime, c.subjectName, c.classId, "", attended, c.courseId));
                 }
             }
         }
@@ -183,6 +185,10 @@ public class TimeTableFragment extends Fragment {
             i.putExtra("subject", item.subject);
             i.putExtra("time", item.start + (item.end == null || item.end.isEmpty() ? "" : " - " + item.end));
             i.putExtra("klass", item.klass);
+            i.putExtra("courseId", item.courseId);
+            // Nếu chưa điểm danh (API status = unpresent) thì yêu cầu AttendanceActivity tự fetch học sinh
+            i.putExtra("shouldFetchStudents", !item.attended);
+            i.putExtra("isPresent", item.attended);
             startActivity(i);
         }));
     }
