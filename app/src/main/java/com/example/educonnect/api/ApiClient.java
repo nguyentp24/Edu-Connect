@@ -1,11 +1,15 @@
 package com.example.educonnect.api;
 
+import com.example.educonnect.model.Parent;
 import com.google.gson.JsonObject;
 import retrofit2.Call;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 import retrofit2.http.Body;
+import retrofit2.http.GET;
+import retrofit2.http.Header;
 import retrofit2.http.POST;
+import retrofit2.http.Path;
 
 /**
  * Cấu hình Retrofit tối thiểu cho gọi API.
@@ -38,7 +42,17 @@ public final class ApiClient {
         // Login: POST /api/Auth/Login
         @POST("api/Auth/Login")
         Call<JsonObject> login(@Body com.example.educonnect.model.LoginRequest body);
+
+        //Profile: GET /api/teacher/parent-profile/{studentId}
+
+        @GET("api/teacher/parent-profile/{studentId}")
+        Call<Parent> getParentProfileForTeacher(
+                @Header("Authorization") String authToken,
+                @Path("studentId") String studentId
+        );
     }
+
+
 }
 
 
