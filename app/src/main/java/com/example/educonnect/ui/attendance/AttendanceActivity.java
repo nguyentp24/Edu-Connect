@@ -83,10 +83,10 @@ public class AttendanceActivity extends AppCompatActivity {
             // Tìm và cập nhật Student trong danh sách
             if (studentName != null) {
                 for (Student s : students) {
-                    if (s.name.equals(studentName)) {
-                        s.note = note != null ? note : "";
-                        s.homework = homework != null ? homework : "";
-                        s.focus = focus != null ? focus : "";
+                    if (s.getName().equals(studentName)) {
+                        s.setNote(note != null ? note : "");
+                        s.setHomework(homework != null ? homework : "");
+                        s.setFocus(focus != null ? focus : "");
                         break;
                     }
                 }
@@ -131,7 +131,7 @@ public class AttendanceActivity extends AppCompatActivity {
                 if (response.isSuccessful() && response.body() != null) {
                     for (ClassroomStudent cs : response.body()) {
                         // lưu studentId và tên, mặc định trạng thái vắng mặt
-                        students.add(new Student(cs.fullName, cs.studentId, Student.Status.ABSENT));
+                        students.add(new Student(cs.getFullName(), cs.getStudentId(), Student.Status.ABSENT));
                     }
                 }
                 if (adapter != null) adapter.notifyDataSetChanged();
@@ -158,7 +158,7 @@ public class AttendanceActivity extends AppCompatActivity {
                     // Tạo map để tra cứu theo studentId
                     Map<String, AttendanceItem> attendanceMap = new HashMap<>();
                     for (AttendanceItem ai : response.body()) {
-                        attendanceMap.put(ai.studentId, ai);
+                        attendanceMap.put(ai.getStudentId(), ai);
                     }
 
                     // Gọi API classroom để lấy danh sách học sinh và merge với attendance
@@ -167,14 +167,14 @@ public class AttendanceActivity extends AppCompatActivity {
                             @Override public void onResponse(retrofit2.Call<java.util.List<ClassroomStudent>> call2, retrofit2.Response<java.util.List<ClassroomStudent>> response2) {
                                 if (response2.isSuccessful() && response2.body() != null) {
                                     for (ClassroomStudent cs : response2.body()) {
-                                        AttendanceItem ai = attendanceMap.get(cs.studentId);
+                                        AttendanceItem ai = attendanceMap.get(cs.getStudentId());
                                         if (ai != null) {
                                             // Map participation sang Status
-                                            Student.Status status = mapParticipationToStatus(ai.participation);
-                                            students.add(new Student(cs.fullName, cs.studentId, status, ai.note, ai.homework, ai.focus));
+                                            Student.Status status = mapParticipationToStatus(ai.getParticipation());
+                                            students.add(new Student(cs.getFullName(), cs.getStudentId(), status, ai.getNote(), ai.getHomework(), ai.getFocus()));
                                         } else {
                                             // Nếu không có trong attendance → mặc định vắng mặt
-                                            students.add(new Student(cs.fullName, cs.studentId, Student.Status.ABSENT));
+                                            students.add(new Student(cs.getFullName(), cs.getStudentId(), Student.Status.ABSENT));
                                         }
                                     }
                                 }
@@ -232,17 +232,17 @@ public class AttendanceActivity extends AppCompatActivity {
         // Tạo mảng AttendanceItem từ danh sách students
         java.util.List<AttendanceItem> attendanceList = new ArrayList<>();
         for (Student s : students) {
-            if (s.studentId == null || s.studentId.isEmpty()) {
+            if (s.getStudentId() == null || s.getStudentId().isEmpty()) {
                 continue; // Bỏ qua nếu không có studentId
             }
             AttendanceItem item = new AttendanceItem();
-            item.atID = ""; // Để chuỗi rỗng khi POST
-            item.studentId = s.studentId;
-            item.courseId = courseId;
-            item.participation = mapStatusToParticipation(s.status);
-            item.note = s.note != null ? s.note : "";
-            item.homework = s.homework != null ? s.homework : "";
-            item.focus = s.focus != null ? s.focus : "";
+            item.setAtID(""); // Để chuỗi rỗng khi POST
+            item.setStudentId(s.getStudentId());
+            item.setCourseId(courseId);
+            item.setParticipation(mapStatusToParticipation(s.getStatus()));
+            item.setNote(s.getNote() != null ? s.getNote() : "");
+            item.setHomework(s.getHomework() != null ? s.getHomework() : "");
+            item.setFocus(s.getFocus() != null ? s.getFocus() : "");
             attendanceList.add(item);
         }
 
@@ -326,8 +326,8 @@ public class AttendanceActivity extends AppCompatActivity {
         }
 
         CourseStatusRequest request = new CourseStatusRequest();
-        request.courseId = courseId;
-        request.status = "present";
+        request.setCourseId(courseId);
+        request.setStatus("present");
 
         android.util.Log.d("AttendanceActivity", "Updating course status: courseId=" + courseId + ", status=present");
 

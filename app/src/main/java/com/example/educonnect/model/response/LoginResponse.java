@@ -7,18 +7,57 @@ import com.google.gson.annotations.SerializedName;
  */
 public class LoginResponse {
     @SerializedName("token")
-    public String token;
+    private String token;
     
     @SerializedName("userId")
-    public String userId;
+    private String userId;
     
     @SerializedName("fullName")
-    public String fullName;
+    private String fullName;
     
     @SerializedName("email")
-    public String email;
+    private String email;
     
     @SerializedName("role")
-    public String role;
-}
+    private String role;
 
+    public String getToken() {
+        return token;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+
+    public String getFullName() {
+        return fullName;
+    }
+
+    public void setFullName(String fullName) {
+        this.fullName = fullName;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
+    }
+}

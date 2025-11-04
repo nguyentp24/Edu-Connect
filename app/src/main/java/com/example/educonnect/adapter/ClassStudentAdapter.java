@@ -13,9 +13,12 @@ import java.util.List;
 public class ClassStudentAdapter extends RecyclerView.Adapter<ClassStudentAdapter.VH> {
 
     public static class Student {
-        public final String name;
-        public final String dob;
+        private final String name;
+        private final String dob;
         public Student(String n, String d){ name = n; dob = d; }
+        
+        public String getName() { return name; }
+        public String getDob() { return dob; }
     }
 
     private final List<Student> data;
@@ -32,8 +35,8 @@ public class ClassStudentAdapter extends RecyclerView.Adapter<ClassStudentAdapte
 
     @Override public void onBindViewHolder(@NonNull VH h, int pos) {
         Student s = data.get(pos);
-        h.vb.tvName.setText(s.name);
-        h.vb.tvDob.setText(s.dob);
+        h.vb.tvName.setText(s.getName());
+        h.vb.tvDob.setText(s.getDob());
     }
 
     @Override public int getItemCount() { return data.size(); }
