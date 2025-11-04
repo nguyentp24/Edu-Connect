@@ -12,8 +12,10 @@ import com.example.educonnect.databinding.ActivityAttendanceBinding;
 import com.example.educonnect.model.Student;
 import com.example.educonnect.model.ClassroomStudent;
 import com.example.educonnect.model.AttendanceItem;
+import com.example.educonnect.model.request.CourseStatusRequest;
 import com.example.educonnect.api.ApiClient;
 import com.example.educonnect.utils.SessionManager;
+import okhttp3.ResponseBody;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -24,6 +26,8 @@ public class AttendanceActivity extends AppCompatActivity {
     private ActivityAttendanceBinding vb;
     private final ArrayList<Student> students = new ArrayList<>();
     private StudentAdapter adapter;
+    private String courseId; // Lưu courseId để dùng khi lưu
+    private boolean isPresent; // Lưu trạng thái course có attendance hay không
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -40,8 +44,8 @@ public class AttendanceActivity extends AppCompatActivity {
 
         vb.btnBack.setOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
 
-        String courseId = getIntent().getStringExtra("courseId");
-        boolean isPresent = getIntent().getBooleanExtra("isPresent", false);
+        this.courseId = getIntent().getStringExtra("courseId");
+        this.isPresent = getIntent().getBooleanExtra("isPresent", false);
         boolean shouldFetch = getIntent().getBooleanExtra("shouldFetchStudents", false);
 
         if (isPresent && courseId != null) {
@@ -58,8 +62,11 @@ public class AttendanceActivity extends AppCompatActivity {
         vb.rvStudents.setAdapter(adapter);
 
         vb.btnSave.setOnClickListener(v -> {
-            Toast.makeText(this, getString(R.string.saved_n, students.size()), Toast.LENGTH_SHORT).show();
-            finish();
+            if (courseId == null || courseId.isEmpty()) {
+                Toast.makeText(this, "Không có courseId", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            saveAttendanceToServer();
         });
         vb.btnCancel.setOnClickListener(v -> finish());
     }
@@ -123,8 +130,8 @@ public class AttendanceActivity extends AppCompatActivity {
             @Override public void onResponse(retrofit2.Call<java.util.List<ClassroomStudent>> call, retrofit2.Response<java.util.List<ClassroomStudent>> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     for (ClassroomStudent cs : response.body()) {
-                        // chỉ lấy tên, mặc định trạng thái vắng mặt
-                        students.add(new Student(cs.fullName, Student.Status.ABSENT));
+                        // lưu studentId và tên, mặc định trạng thái vắng mặt
+                        students.add(new Student(cs.fullName, cs.studentId, Student.Status.ABSENT));
                     }
                 }
                 if (adapter != null) adapter.notifyDataSetChanged();
@@ -164,10 +171,10 @@ public class AttendanceActivity extends AppCompatActivity {
                                         if (ai != null) {
                                             // Map participation sang Status
                                             Student.Status status = mapParticipationToStatus(ai.participation);
-                                            students.add(new Student(cs.fullName, status, ai.note, ai.homework, ai.focus));
+                                            students.add(new Student(cs.fullName, cs.studentId, status, ai.note, ai.homework, ai.focus));
                                         } else {
                                             // Nếu không có trong attendance → mặc định vắng mặt
-                                            students.add(new Student(cs.fullName, Student.Status.ABSENT));
+                                            students.add(new Student(cs.fullName, cs.studentId, Student.Status.ABSENT));
                                         }
                                     }
                                 }
@@ -198,5 +205,172 @@ public class AttendanceActivity extends AppCompatActivity {
             case "Vắng mặt": return Student.Status.ABSENT;
             default: return Student.Status.ABSENT;
         }
+    }
+
+    private String mapStatusToParticipation(Student.Status status) {
+        switch (status) {
+            case PRESENT: return "Có mặt";
+            case LATE: return "Đi trễ";
+            case ABSENT: return "Vắng mặt";
+            default: return "Vắng mặt";
+        }
+    }
+
+    private void saveAttendanceToServer() {
+        if (students.isEmpty()) {
+            Toast.makeText(this, "Không có học sinh để lưu", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        SessionManager sm = new SessionManager(this);
+        String token = sm.getToken();
+        if (token == null) {
+            Toast.makeText(this, "Chưa đăng nhập", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Tạo mảng AttendanceItem từ danh sách students
+        java.util.List<AttendanceItem> attendanceList = new ArrayList<>();
+        for (Student s : students) {
+            if (s.studentId == null || s.studentId.isEmpty()) {
+                continue; // Bỏ qua nếu không có studentId
+            }
+            AttendanceItem item = new AttendanceItem();
+            item.atID = ""; // Để chuỗi rỗng khi POST
+            item.studentId = s.studentId;
+            item.courseId = courseId;
+            item.participation = mapStatusToParticipation(s.status);
+            item.note = s.note != null ? s.note : "";
+            item.homework = s.homework != null ? s.homework : "";
+            item.focus = s.focus != null ? s.focus : "";
+            attendanceList.add(item);
+        }
+
+        if (attendanceList.isEmpty()) {
+            Toast.makeText(this, "Không có dữ liệu hợp lệ để lưu", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Bắt đầu với loading
+        setLoading(true);
+
+        // Nếu course đã có attendance (status = present), DELETE trước
+        if (isPresent && courseId != null && !courseId.isEmpty()) {
+            deleteAttendanceThenPost(attendanceList, token);
+        } else {
+            // Nếu chưa có attendance, POST trực tiếp
+            postAttendance(attendanceList, token);
+        }
+    }
+
+    private void deleteAttendanceThenPost(java.util.List<AttendanceItem> attendanceList, String token) {
+        ApiClient.ApiService api = ApiClient.service();
+        api.deleteAttendanceByCourse(courseId, "Bearer " + token).enqueue(new retrofit2.Callback<ResponseBody>() {
+            @Override
+            public void onResponse(retrofit2.Call<ResponseBody> call, retrofit2.Response<ResponseBody> response) {
+                int code = response.code();
+                if (code >= 200 && code < 300) {
+                    // DELETE thành công → POST attendance
+                    android.util.Log.d("AttendanceActivity", "Delete attendance successful, now posting...");
+                    postAttendance(attendanceList, token);
+                } else {
+                    // DELETE thất bại
+                    setLoading(false);
+                    android.util.Log.e("AttendanceActivity", "Delete attendance failed with code: " + code);
+                    Toast.makeText(AttendanceActivity.this, "Xóa điểm danh cũ thất bại: " + code, Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(retrofit2.Call<ResponseBody> call, Throwable t) {
+                setLoading(false);
+                android.util.Log.e("AttendanceActivity", "Delete attendance onFailure", t);
+                Toast.makeText(AttendanceActivity.this, "Lỗi mạng khi xóa điểm danh: " + (t.getMessage() != null ? t.getMessage() : "Không kết nối được server"), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void postAttendance(java.util.List<AttendanceItem> attendanceList, String token) {
+        ApiClient.ApiService api = ApiClient.service();
+        api.saveAttendance(attendanceList, "Bearer " + token).enqueue(new retrofit2.Callback<ResponseBody>() {
+            @Override
+            public void onResponse(retrofit2.Call<ResponseBody> call, retrofit2.Response<ResponseBody> response) {
+                // Không quan tâm response body, chỉ kiểm tra status code
+                int code = response.code();
+                if (code >= 200 && code < 300) {
+                    // POST thành công → cập nhật status course và quay về
+                    updateCourseStatusToPresent(token);
+                } else {
+                    // Lỗi từ server
+                    setLoading(false);
+                    Toast.makeText(AttendanceActivity.this, "Lưu thất bại: " + code, Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(retrofit2.Call<ResponseBody> call, Throwable t) {
+                // Lỗi mạng hoặc kết nối
+                setLoading(false);
+                Toast.makeText(AttendanceActivity.this, "Lỗi mạng: " + (t.getMessage() != null ? t.getMessage() : "Không kết nối được server"), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void updateCourseStatusToPresent(String token) {
+        if (courseId == null || courseId.isEmpty()) {
+            setLoading(false);
+            android.util.Log.w("AttendanceActivity", "updateCourseStatusToPresent: courseId is null or empty");
+            Toast.makeText(this, "Đã lưu điểm danh thành công", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+
+        CourseStatusRequest request = new CourseStatusRequest();
+        request.courseId = courseId;
+        request.status = "present";
+
+        android.util.Log.d("AttendanceActivity", "Updating course status: courseId=" + courseId + ", status=present");
+
+        ApiClient.ApiService api = ApiClient.service();
+        api.updateCourseStatus(request, "Bearer " + token).enqueue(new retrofit2.Callback<ResponseBody>() {
+            @Override
+            public void onResponse(retrofit2.Call<ResponseBody> call, retrofit2.Response<ResponseBody> response) {
+                setLoading(false);
+                // Kiểm tra status code
+                int code = response.code();
+                android.util.Log.d("AttendanceActivity", "updateCourseStatus response code: " + code);
+                if (code >= 200 && code < 300) {
+                    android.util.Log.d("AttendanceActivity", "Course status updated successfully");
+                    Toast.makeText(AttendanceActivity.this, "Đã lưu điểm danh thành công", Toast.LENGTH_SHORT).show();
+                } else {
+                    android.util.Log.e("AttendanceActivity", "Course status update failed with code: " + code);
+                    try {
+                        if (response.errorBody() != null) {
+                            String error = response.errorBody().string();
+                            android.util.Log.e("AttendanceActivity", "Error body: " + error);
+                        }
+                    } catch (Exception e) {
+                        android.util.Log.e("AttendanceActivity", "Error reading error body", e);
+                    }
+                    Toast.makeText(AttendanceActivity.this, "Đã lưu điểm danh (cập nhật status thất bại: " + code + ")", Toast.LENGTH_SHORT).show();
+                }
+                finish(); // Quay về timetable
+            }
+
+            @Override
+            public void onFailure(retrofit2.Call<ResponseBody> call, Throwable t) {
+                setLoading(false);
+                android.util.Log.e("AttendanceActivity", "updateCourseStatus onFailure", t);
+                // Vẫn finish vì đã lưu attendance thành công
+                Toast.makeText(AttendanceActivity.this, "Đã lưu điểm danh (cập nhật status thất bại: " + (t.getMessage() != null ? t.getMessage() : "Lỗi mạng") + ")", Toast.LENGTH_SHORT).show();
+                finish();
+            }
+        });
+    }
+
+    private void setLoading(boolean loading) {
+        vb.btnSave.setEnabled(!loading);
+        vb.btnCancel.setEnabled(!loading);
+        vb.loadingOverlay.setVisibility(loading ? android.view.View.VISIBLE : android.view.View.GONE);
     }
 }
