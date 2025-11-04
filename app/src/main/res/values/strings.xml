@@ -39,4 +39,16 @@
     <string name="student_dob">Ngày sinh</string>
     <string name="add">Add</string>
 
+    <!-- Login screen -->
+    <string name="login_title">EduConnect</string>
+    <string name="login_subtitle">Hello Teacher!</string>
+    <string name="login_account_label">Tài Khoản</string>
+    <string name="login_email_hint">johndoe@gmail.com</string>
+    <string name="login_password_label">Mật Khẩu</string>
+    <string name="login_password_hint">********</string>
+    <string name="login_error_incorrect">Tài khoản hoặc mật khẩu không chính xác</string>
+    <string name="login_sign_in">Đăng Nhập</string>
+    <string name="login_sign_in_google">Đăng Nhập Với Google</string>
+    <string name="login_illustration_desc">login illustration</string>
+
 </resources>
