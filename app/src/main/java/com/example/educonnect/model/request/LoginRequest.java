@@ -1,5 +1,8 @@
-package com.example.educonnect.model;
+package com.example.educonnect.model.request;
 
+/**
+ * Model request cho API đăng nhập
+ */
 public class LoginRequest {
     public String email;
     public String password;
@@ -9,5 +12,4 @@ public class LoginRequest {
         this.password = password;
     }
 }
-
 
