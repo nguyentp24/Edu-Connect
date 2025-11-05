@@ -108,9 +108,7 @@ public class AttendanceActivity extends AppCompatActivity {
 
         String subject = getIntent().getStringExtra("subject");
         String time    = getIntent().getStringExtra("time");
-        this.currentClassId = getIntent().getStringExtra("class");
-        String className = getIntent().getStringExtra("className"); // Tên lớp từ Timetable
-        
+        String klass   = getIntent().getStringExtra("klass");
         vb.tvSubject.setText(getString(R.string.subject_fmt, subject != null ? subject : "—"));
         vb.tvTime.setText(getString(R.string.time_fmt, time != null ? time : "—"));
         // Ưu tiên dùng className từ Timetable, nếu không có thì dùng classId

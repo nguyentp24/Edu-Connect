@@ -3,7 +3,7 @@ package com.example.educonnect.ui.tabs;
 import android.app.DatePickerDialog;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
+import android.content.SharedPreferences; // Giữ lại cho việc lấy teacherId/className
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -32,6 +32,7 @@ import com.example.educonnect.model.Term;
 import com.example.educonnect.model.TermRequest;
 import com.example.educonnect.ui.reports.ReportHistoryActivity;
 import com.google.android.material.card.MaterialCardView;
+import com.example.educonnect.utils.SessionManager; // <-- THÊM
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -80,20 +81,24 @@ public class ReportFragment extends Fragment {
         Context context = getContext();
         if (context == null) return;
 
-        isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault());
-        isoFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+        SessionManager sessionManager = new SessionManager(context); // <-- Dùng SessionManager
+        authToken = sessionManager.getToken(); // <-- Lấy token từ SessionManager
 
-        dateOnlyFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-        dateOnlyFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-
+        // VÌ SessionManager KHÔNG LƯU classId, chúng ta vẫn phải lấy nó từ SharedPreferences cũ (tạm thời)
         SharedPreferences prefs = context.getSharedPreferences("EduConnectApp", Context.MODE_PRIVATE);
-        authToken = prefs.getString("token", null);
         classId = prefs.getString("classId", null);
 
         if (authToken == null || classId == null) {
             Toast.makeText(context, "Lỗi: Phiên đăng nhập hết hạn.", Toast.LENGTH_LONG).show();
             return;
         }
+
+        // ... (phần khởi tạo khác giữ nguyên)
+        isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault());
+        isoFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+
+        dateOnlyFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        dateOnlyFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
 
         selectedCardBgColor = ContextCompat.getColor(context, R.color.card_selected_bg);
         unselectedCardBgColor = ContextCompat.getColor(context, R.color.card_unselected_bg);
@@ -120,12 +125,13 @@ public class ReportFragment extends Fragment {
         fetchDropdownData();
     }
 
+    // === SỬA: Thêm "Bearer " vào tất cả API calls ===
     private void fetchDropdownData() {
-        if (classId == null) {
-            Toast.makeText(getContext(), "Không tìm thấy Class ID", Toast.LENGTH_SHORT).show();
+        if (classId == null || authToken == null) {
+            Toast.makeText(getContext(), "Không tìm thấy Class ID hoặc Token", Toast.LENGTH_SHORT).show();
             return;
         }
-        ApiClient.service().getClassroom(classId, authToken).enqueue(new Callback<Classroom>() {
+        ApiClient.service().getClassroom(classId, "Bearer " + authToken).enqueue(new Callback<Classroom>() {
             @Override
             public void onResponse(Call<Classroom> call, Response<Classroom> response) {
                 if (response.isSuccessful() && response.body() != null) {
@@ -147,7 +153,7 @@ public class ReportFragment extends Fragment {
     }
 
     private void fetchSchoolYear(String schoolYearId) {
-        ApiClient.service().getSchoolYear(schoolYearId, authToken).enqueue(new Callback<SchoolYear>() {
+        ApiClient.service().getSchoolYear(schoolYearId, "Bearer " + authToken).enqueue(new Callback<SchoolYear>() {
             @Override
             public void onResponse(Call<SchoolYear> call, Response<SchoolYear> response) {
                 if (response.isSuccessful() && response.body() != null) {
@@ -190,7 +196,7 @@ public class ReportFragment extends Fragment {
     }
 
     private void fetchSemesters(String schoolYearId) {
-        ApiClient.service().getSemesters(schoolYearId, authToken).enqueue(new Callback<List<Semester>>() {
+        ApiClient.service().getSemesters(schoolYearId, "Bearer " + authToken).enqueue(new Callback<List<Semester>>() {
             @Override
             public void onResponse(Call<List<Semester>> call, Response<List<Semester>> response) {
                 if (response.isSuccessful() && response.body() != null) {
@@ -229,6 +235,8 @@ public class ReportFragment extends Fragment {
             }
         });
     }
+
+    // ... (showConfirmationDialog và getReportPreview giữ nguyên)
 
     private void showConfirmationDialog() {
         if (selectedCard == null) {
@@ -270,6 +278,7 @@ public class ReportFragment extends Fragment {
         return null;
     }
 
+
     private void generateReport() {
         if (selectedCard == null || classId == null) {
             Toast.makeText(getContext(), "Vui lòng chọn loại báo cáo và đảm bảo đã đăng nhập", Toast.LENGTH_SHORT).show();
@@ -279,15 +288,22 @@ public class ReportFragment extends Fragment {
         String reportTitle = getReportPreview();
         String reportDesc = "Báo cáo tự động cho lớp " + classId;
 
+        // Lấy thông tin cần thiết từ SessionManager
+        SessionManager sessionManager = new SessionManager(getContext());
+        String teacherId = sessionManager.getTeacherId();
+        String teacherName = sessionManager.getFullName(); // Lấy tên đầy đủ từ SessionManager
+
+        // VÌ KHÔNG LƯU CLASS NAME TRONG SessionManager, lấy từ SharedPreferences tạm thời
         SharedPreferences prefs = getContext().getSharedPreferences("EduConnectApp", Context.MODE_PRIVATE);
-        String teacherId = prefs.getString("teacherId", null);
-        String teacherName = prefs.getString("teacherName", null);
         String className = prefs.getString("className", null);
+
 
         if (teacherId == null || teacherName == null || className == null) {
             Toast.makeText(getContext(), "Lỗi: Thiếu thông tin teacher/class. Vui lòng đăng nhập lại.", Toast.LENGTH_LONG).show();
             return;
         }
+
+        // ... (logic xác định thời gian báo cáo giữ nguyên)
 
         String startTime = null;
         String endTime = null;
@@ -327,7 +343,8 @@ public class ReportFragment extends Fragment {
         TermRequest termRequest = new TermRequest(startTime, endTime, mode);
         Toast.makeText(getContext(), "Đang tạo báo cáo...", Toast.LENGTH_SHORT).show();
 
-        ApiClient.service().createTerm(termRequest, authToken).enqueue(new Callback<Term>() {
+        // Thêm "Bearer " vào Token
+        ApiClient.service().createTerm(termRequest, "Bearer " + authToken).enqueue(new Callback<Term>() {
             @Override
             public void onResponse(Call<Term> call, Response<Term> response) {
                 if (response.isSuccessful() && response.body() != null) {
@@ -363,7 +380,8 @@ public class ReportFragment extends Fragment {
                 className
         );
 
-        ApiClient.service().createNewReport(reportRequest, authToken).enqueue(new Callback<Report>() {
+        // Thêm "Bearer " vào Token
+        ApiClient.service().createNewReport(reportRequest, "Bearer " + authToken).enqueue(new Callback<Report>() {
             @Override
             public void onResponse(Call<Report> call, Response<Report> response) {
                 if (response.isSuccessful() && response.body() != null) {
@@ -385,6 +403,8 @@ public class ReportFragment extends Fragment {
             }
         });
     }
+
+    // ... (các hàm helper khác giữ nguyên)
 
     private String parseYear(String apiDate) {
         if (apiDate == null) return "";

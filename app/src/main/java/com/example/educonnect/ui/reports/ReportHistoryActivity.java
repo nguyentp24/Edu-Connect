@@ -16,6 +16,7 @@ import com.example.educonnect.R;
 import com.example.educonnect.api.ApiClient;
 import com.example.educonnect.model.Term;
 import com.google.android.material.appbar.MaterialToolbar;
+import com.example.educonnect.utils.SessionManager; // <-- THÊM IMPORT NÀY
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,9 +45,14 @@ public class ReportHistoryActivity extends AppCompatActivity {
 
         justCreated = getIntent().getBooleanExtra("JUST_CREATED", false);
 
+        // DÙNG SessionManager ĐỂ LẤY TOKEN
+        SessionManager sessionManager = new SessionManager(this);
+        authToken = sessionManager.getToken();
+
+        // VÌ SessionManager KHÔNG LƯU classId, chúng ta vẫn phải lấy nó từ SharedPreferences cũ (TẠM THỜI)
         SharedPreferences prefs = getSharedPreferences("EduConnectApp", Context.MODE_PRIVATE);
-        authToken = prefs.getString("token", null);
         classId = prefs.getString("classId", null);
+
 
         if (authToken == null || classId == null) {
             Toast.makeText(this, "Lỗi: Phiên đăng nhập hết hạn.", Toast.LENGTH_LONG).show();
@@ -87,9 +93,10 @@ public class ReportHistoryActivity extends AppCompatActivity {
     }
 
     private void callGetReportHistoryApi() {
+        // FIX LỖI 401: Thêm tiền tố "Bearer " vào authToken
         Call<List<Report>> call = ApiClient.service().getReportHistory(
                 classId,
-                authToken,
+                "Bearer " + authToken,
                 System.currentTimeMillis()
         );
 
@@ -110,6 +117,7 @@ public class ReportHistoryActivity extends AppCompatActivity {
                     fetchTermDetailsForList(basicReports);
                 } else {
                     Log.e("ReportHistory", "Lỗi gọi API: " + response.code() + " - " + response.message());
+                    // Báo lỗi 401 ở đây
                     Toast.makeText(ReportHistoryActivity.this, "Không thể tải lịch sử: " + response.code(), Toast.LENGTH_SHORT).show();
                 }
             }
@@ -136,7 +144,8 @@ public class ReportHistoryActivity extends AppCompatActivity {
             final int index = i;
             Report report = basicReports.get(i);
 
-            ApiClient.service().getTermDetails(report.getTermId(), authToken).enqueue(new Callback<Term>() {
+            // FIX LỖI 401: Thêm tiền tố "Bearer " vào authToken
+            ApiClient.service().getTermDetails(report.getTermId(), "Bearer " + authToken).enqueue(new Callback<Term>() {
                 @Override
                 public void onResponse(Call<Term> call, Response<Term> response) {
                     if (response.isSuccessful() && response.body() != null) {
