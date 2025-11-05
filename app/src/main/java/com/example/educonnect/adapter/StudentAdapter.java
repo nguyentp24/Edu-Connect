@@ -33,14 +33,14 @@ public class StudentAdapter extends RecyclerView.Adapter<StudentAdapter.VH> {
     public void onBindViewHolder(@NonNull VH h, int pos) {
         final Context ctx = h.itemView.getContext();   // dùng 1 lần ở đây
         final Student st = data.get(pos);
-        h.vb.tvName.setText(st.name);
-        applyStatus(ctx, h, st.status);
+        h.vb.tvName.setText(st.getName());
+        applyStatus(ctx, h, st.getStatus());
 
         // Bắt tên (string) để dùng trong lambda, tránh bắt cả đối tượng st
-        final String studentName = st.name;
-        final String note = (st.note != null && !st.note.isEmpty() && !st.note.equals("no")) ? st.note : "";
-        final String homework = (st.homework != null && !st.homework.isEmpty() && !st.homework.equals("no")) ? st.homework : "";
-        final String focus = (st.focus != null && !st.focus.isEmpty() && !st.focus.equals("no")) ? st.focus : "";
+        final String studentName = st.getName();
+        final String note = (st.getNote() != null && !st.getNote().isEmpty() && !st.getNote().equals("no")) ? st.getNote() : "";
+        final String homework = (st.getHomework() != null && !st.getHomework().isEmpty() && !st.getHomework().equals("no")) ? st.getHomework() : "";
+        final String focus = (st.getFocus() != null && !st.getFocus().isEmpty() && !st.getFocus().equals("no")) ? st.getFocus() : "";
         final int position = pos; // Lưu position để cập nhật sau
 
         // Mở trang "Thái độ học tập" khi bấm vào tên
@@ -67,12 +67,12 @@ public class StudentAdapter extends RecyclerView.Adapter<StudentAdapter.VH> {
 
         // Đổi trạng thái điểm danh khi bấm chip
         h.vb.chipStatus.setOnClickListener(v -> {
-            switch (st.status) {
-                case PRESENT: st.status = Student.Status.LATE; break;
-                case LATE:    st.status = Student.Status.ABSENT; break;
-                default:      st.status = Student.Status.PRESENT; break;
+            switch (st.getStatus()) {
+                case PRESENT: st.setStatus(Student.Status.LATE); break;
+                case LATE:    st.setStatus(Student.Status.ABSENT); break;
+                default:      st.setStatus(Student.Status.PRESENT); break;
             }
-            applyStatus(ctx, h, st.status);
+            applyStatus(ctx, h, st.getStatus());
             if (onChanged != null) onChanged.onChanged();
         });
     }

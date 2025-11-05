@@ -28,22 +28,22 @@ public class ScheduleAdapter extends RecyclerView.Adapter<ScheduleAdapter.VH> {
 
     @Override public void onBindViewHolder(@NonNull VH h, int pos) {
         ScheduleItem it = data.get(pos);
-        h.vb.txtTimeStart.setText(it.start);
-        h.vb.txtTimeEnd.setText(it.end);
-        h.vb.txtSubject.setText(it.subject);
-        h.vb.txtStatus.setText(it.status);
-        h.vb.txtClass.setText("Lớp: " + mapClassIdToName(it.klass));
+        h.vb.txtTimeStart.setText(it.getStart());
+        h.vb.txtTimeEnd.setText(it.getEnd());
+        h.vb.txtSubject.setText(it.getSubject());
+        h.vb.txtStatus.setText(it.getStatus());
+        h.vb.txtClass.setText("Lớp: " + mapClassIdToName(it.getKlass()));
         // Cập nhật trạng thái theo thời gian
         updateTimeStatus(h, it);
         // Attendance
-        h.vb.txtAttendance.setText(it.attended ? "Đã điểm danh" : "Chưa điểm danh");
-        int color = it.attended ? h.vb.getRoot().getContext().getColor(com.example.educonnect.R.color.green)
+        h.vb.txtAttendance.setText(it.isAttended() ? "Đã điểm danh" : "Chưa điểm danh");
+        int color = it.isAttended() ? h.vb.getRoot().getContext().getColor(com.example.educonnect.R.color.green)
                                  : h.vb.getRoot().getContext().getColor(com.example.educonnect.R.color.red);
         h.vb.txtAttendance.setTextColor(color);
 
         android.view.View dot = h.vb.getRoot().findViewById(com.example.educonnect.R.id.dotStatus);
         if (dot != null) {
-            dot.setBackgroundResource(it.attended ? com.example.educonnect.R.drawable.dot_green
+            dot.setBackgroundResource(it.isAttended() ? com.example.educonnect.R.drawable.dot_green
                                                   : com.example.educonnect.R.drawable.dot_red);
         }
 
@@ -63,8 +63,8 @@ public class ScheduleAdapter extends RecyclerView.Adapter<ScheduleAdapter.VH> {
 
     private void updateTimeStatus(VH h, ScheduleItem it) {
         long now = System.currentTimeMillis();
-        long start = parseIsoToMillis(it.startIso);
-        long end = parseIsoToMillis(it.endIso);
+        long start = parseIsoToMillis(it.getStartIso());
+        long end = parseIsoToMillis(it.getEndIso());
         if (start <= 0 || end <= 0) {
             h.vb.txtStatus.setText("");
             return;

@@ -18,9 +18,12 @@ import java.util.List;
 public class ClassStudentAdapter extends RecyclerView.Adapter<ClassStudentAdapter.VH> {
 
     public static class Student {
-        public final String name;
-        public final String dob;
+        private final String name;
+        private final String dob;
         public Student(String n, String d){ name = n; dob = d; }
+        
+        public String getName() { return name; }
+        public String getDob() { return dob; }
     }
 
     private final List<Student> data;
@@ -40,24 +43,8 @@ public class ClassStudentAdapter extends RecyclerView.Adapter<ClassStudentAdapte
 
     @Override public void onBindViewHolder(@NonNull VH h, int pos) {
         Student s = data.get(pos);
-        h.vb.tvName.setText(s.name);
-        h.vb.tvDob.setText(s.dob);
-
-        h.itemView.setOnClickListener(v -> {
-            // Dòng này giờ sẽ hoạt động vì `fullStudentData` đã được khai báo đúng
-            String studentId = fullStudentData.get(pos).studentId;
-
-            // SỬA LỖI 2: Dùng đúng lớp Context
-            Context context = h.itemView.getContext();
-
-            if (studentId != null && !studentId.isEmpty()) {
-                Intent intent = new Intent(context, ParentProfileActivity.class);
-                intent.putExtra(ParentProfileActivity.EXTRA_STUDENT_ID, studentId);
-                context.startActivity(intent);
-            } else {
-                Toast.makeText(context, "Không có ID cho học sinh này", Toast.LENGTH_SHORT).show();
-            }
-        });
+        h.vb.tvName.setText(s.getName());
+        h.vb.tvDob.setText(s.getDob());
     }
 
     @Override public int getItemCount() { return data.size(); }

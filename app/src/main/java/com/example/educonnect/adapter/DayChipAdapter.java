@@ -27,17 +27,17 @@ public class DayChipAdapter extends RecyclerView.Adapter<DayChipAdapter.VH> {
 
     @Override public void onBindViewHolder(@NonNull VH h, int pos) {
         DayChip d = data.get(pos);
-        h.dayTop.setText(d.dayNumber);
-        h.weekday.setText(d.dayLabel);
+        h.dayTop.setText(d.getDayNumber());
+        h.weekday.setText(d.getDayLabel());
 
         // set selected để đổi background
-        h.container.setSelected(d.selected);
+        h.container.setSelected(d.isSelected());
 
         // màu chữ: selected = trắng, normal = xám
         int selectedText = 0xFFFFFFFF;
         int normalText   = 0xFF6B7280; // xám đậm nhẹ
 
-        int color = d.selected ? selectedText : normalText;
+        int color = d.isSelected() ? selectedText : normalText;
         h.dayTop.setTextColor(color);
         h.weekday.setTextColor(color);
 

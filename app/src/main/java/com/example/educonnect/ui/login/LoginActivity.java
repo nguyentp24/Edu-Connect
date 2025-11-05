@@ -48,14 +48,14 @@ public class LoginActivity extends AppCompatActivity {
                     LoginResponse loginResponse = response.body();
                     // Lưu thông tin đăng nhập vào SharedPreferences
                     sessionManager.saveLoginSession(
-                            loginResponse.token,
-                            loginResponse.userId,
-                            loginResponse.fullName,
-                            loginResponse.email,
-                            loginResponse.role
+                            loginResponse.getToken(),
+                            loginResponse.getUserId(),
+                            loginResponse.getFullName(),
+                            loginResponse.getEmail(),
+                            loginResponse.getRole()
                     );
                     // Sau khi login thành công -> gọi API lấy thông tin Teacher
-                    fetchTeacherAndGo(loginResponse.userId, loginResponse.token);
+                    fetchTeacherAndGo(loginResponse.getUserId(), loginResponse.getToken());
                 } else {
                     Toast.makeText(LoginActivity.this, "Đăng nhập thất bại: " + response.code(), Toast.LENGTH_SHORT).show();
                 }
@@ -74,9 +74,9 @@ public class LoginActivity extends AppCompatActivity {
             @Override public void onResponse(retrofit2.Call<com.example.educonnect.model.Teacher> call, retrofit2.Response<com.example.educonnect.model.Teacher> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     com.example.educonnect.model.Teacher t = response.body();
-                    sessionManager.saveTeacher(t.teacherId, t.phoneNumber, t.userImage);
+                    sessionManager.saveTeacher(t.getTeacherId(), t.getPhoneNumber(), t.getUserImage());
                     // Sau khi lấy teacher -> lấy luôn danh sách courses theo teacherId và lưu
-                    fetchCoursesByTeacherAndGo(t.teacherId, token);
+                    fetchCoursesByTeacherAndGo(t.getTeacherId(), token);
                     return;
                 }
                 // fallback

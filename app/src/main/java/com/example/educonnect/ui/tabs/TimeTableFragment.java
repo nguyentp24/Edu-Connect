@@ -76,8 +76,8 @@ public class TimeTableFragment extends Fragment {
 
         chipAdapter = new DayChipAdapter(days, pos -> {
             // chọn ngày theo chip
-            for (int i = 0; i < days.size(); i++) days.get(i).selected = (i == pos);
-            selectedDate = (Calendar) days.get(pos).date.clone();
+            for (int i = 0; i < days.size(); i++) days.get(i).setSelected(i == pos);
+            selectedDate = (Calendar) days.get(pos).getDate().clone();
             chipAdapter.notifyDataSetChanged();
             vb.rvDays.smoothScrollToPosition(pos);
 
@@ -142,7 +142,7 @@ public class TimeTableFragment extends Fragment {
     /** Tìm index của chip selected */
     private int findSelectedIndex() {
         for (int i = 0; i < days.size(); i++)
-            if (days.get(i).selected)
+            if (days.get(i).isSelected())
                 return i;
         return -1;
     }
@@ -164,31 +164,31 @@ public class TimeTableFragment extends Fragment {
         ArrayList<ScheduleItem> list = new ArrayList<>();
         if (!allCourses.isEmpty()) {
             for (Course c : allCourses) {
-                if (isSameDayIso(c.startTime, selectedDate)) {
-                    String start = formatTime(c.startTime);
-                    String end   = formatTime(c.endTime);
-                    boolean attended = c.status != null && c.status.equalsIgnoreCase("present");
-                    list.add(new ScheduleItem(start, end, c.startTime, c.endTime, c.subjectName, c.classId, "", attended, c.courseId));
+                if (isSameDayIso(c.getStartTime(), selectedDate)) {
+                    String start = formatTime(c.getStartTime());
+                    String end   = formatTime(c.getEndTime());
+                    boolean attended = c.getStatus() != null && c.getStatus().equalsIgnoreCase("present");
+                    list.add(new ScheduleItem(start, end, c.getStartTime(), c.getEndTime(), c.getSubjectName(), c.getClassId(), "", attended, c.getCourseId()));
                 }
             }
         }
 
         // sắp xếp theo thời gian bắt đầu tăng dần
         java.util.Collections.sort(list, (a, b) -> Integer.compare(
-                timeMinutesIso(a.startIso),
-                timeMinutesIso(b.startIso)
+                timeMinutesIso(a.getStartIso()),
+                timeMinutesIso(b.getStartIso())
         ));
 
         vb.rvSchedules.setLayoutManager(new LinearLayoutManager(getContext()));
         vb.rvSchedules.setAdapter(new ScheduleAdapter(list, item -> {
             Intent i = new Intent(requireContext(), AttendanceActivity.class);
-            i.putExtra("subject", item.subject);
-            i.putExtra("time", item.start + (item.end == null || item.end.isEmpty() ? "" : " - " + item.end));
-            i.putExtra("klass", item.klass);
-            i.putExtra("courseId", item.courseId);
+            i.putExtra("subject", item.getSubject());
+            i.putExtra("time", item.getStart() + (item.getEnd() == null || item.getEnd().isEmpty() ? "" : " - " + item.getEnd()));
+            i.putExtra("klass", item.getKlass());
+            i.putExtra("courseId", item.getCourseId());
             // Nếu chưa điểm danh (API status = unpresent) thì yêu cầu AttendanceActivity tự fetch học sinh
-            i.putExtra("shouldFetchStudents", !item.attended);
-            i.putExtra("isPresent", item.attended);
+            i.putExtra("shouldFetchStudents", !item.isAttended());
+            i.putExtra("isPresent", item.isAttended());
             startActivity(i);
         }));
     }
