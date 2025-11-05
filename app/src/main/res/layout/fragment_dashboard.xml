@@ -16,7 +16,7 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <!-- Header tím -->
+            <!-- Header -->
             <LinearLayout
                 android:id="@+id/header"
                 android:layout_width="match_parent"
@@ -60,7 +60,7 @@
                     android:textSize="18sp"/>
             </LinearLayout>
 
-            <!-- Thẻ thống kê 3 cột (nằm chồng lên mép dưới header một chút) -->
+            <!-- Thẻ thống kê 3 cột -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -204,6 +204,27 @@
                     android:textColor="@color/tertiary"
                     android:textStyle="bold"
                     android:textSize="20sp"/>
+            </LinearLayout>
+
+            <!-- Thêm các khung học sinh -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <include
+                    android:id="@+id/itemStudent1"
+                    layout="@layout/item_student_dashboard" />
+
+                <include
+                    android:id="@+id/itemStudent2"
+                    layout="@layout/item_student_dashboard" />
+
+                <include
+                    android:id="@+id/itemStudent3"
+                    layout="@layout/item_student_dashboard" />
+
             </LinearLayout>
 
         </LinearLayout>
