@@ -28,12 +28,24 @@ public class ScheduleAdapter extends RecyclerView.Adapter<ScheduleAdapter.VH> {
 
     @Override public void onBindViewHolder(@NonNull VH h, int pos) {
         ScheduleItem it = data.get(pos);
-        h.vb.txtTimeStart.setText(it.start);
-        h.vb.txtTimeEnd.setText(it.end);
-        h.vb.txtSubject.setText(it.subject);
-        h.vb.txtStatus.setText(it.status);
-        h.vb.txtClass.setText("Lớp: " + it.classroom);
-        h.vb.txtAttendance.setText(it.attended ? "Đã điểm danh" : "Chưa điểm danh");
+        h.vb.txtTimeStart.setText(it.getStart());
+        h.vb.txtTimeEnd.setText(it.getEnd());
+        h.vb.txtSubject.setText(it.getSubject());
+        h.vb.txtStatus.setText(it.getStatus());
+        h.vb.txtClass.setText("Lớp: " + mapClassIdToName(it.getKlass()));
+        // Cập nhật trạng thái theo thời gian
+        updateTimeStatus(h, it);
+        // Attendance
+        h.vb.txtAttendance.setText(it.isAttended() ? "Đã điểm danh" : "Chưa điểm danh");
+        int color = it.isAttended() ? h.vb.getRoot().getContext().getColor(com.example.educonnect.R.color.green)
+                                 : h.vb.getRoot().getContext().getColor(com.example.educonnect.R.color.red);
+        h.vb.txtAttendance.setTextColor(color);
+
+        android.view.View dot = h.vb.getRoot().findViewById(com.example.educonnect.R.id.dotStatus);
+        if (dot != null) {
+            dot.setBackgroundResource(it.isAttended() ? com.example.educonnect.R.drawable.dot_green
+                                                  : com.example.educonnect.R.drawable.dot_red);
+        }
 
         h.vb.getRoot().setOnClickListener(v -> {
             if (onItemClick != null) onItemClick.onClick(it);
@@ -47,6 +59,61 @@ public class ScheduleAdapter extends RecyclerView.Adapter<ScheduleAdapter.VH> {
     static class VH extends RecyclerView.ViewHolder {
         final ItemScheduleBinding vb;
         VH(ItemScheduleBinding b){ super(b.getRoot()); vb = b; }
+    }
+
+    private void updateTimeStatus(VH h, ScheduleItem it) {
+        long now = System.currentTimeMillis();
+        long start = parseIsoToMillis(it.getStartIso());
+        long end = parseIsoToMillis(it.getEndIso());
+        if (start <= 0 || end <= 0) {
+            h.vb.txtStatus.setText("");
+            return;
+        }
+
+        if (now < start) {
+            long minutesLeft = (start - now) / (60 * 1000);
+            if (minutesLeft >= 60) {
+                h.vb.txtStatus.setText("Sắp bắt đầu");
+                h.vb.txtStatus.setTextColor(h.vb.getRoot().getContext().getColor(com.example.educonnect.R.color.green));
+            } else {
+                h.vb.txtStatus.setText(minutesLeft + " phút trước khi bắt đầu");
+                h.vb.txtStatus.setTextColor(h.vb.getRoot().getContext().getColor(com.example.educonnect.R.color.amber));
+            }
+        } else if (now >= start && now <= end) {
+            h.vb.txtStatus.setText("Đang bắt đầu");
+            h.vb.txtStatus.setTextColor(h.vb.getRoot().getContext().getColor(com.example.educonnect.R.color.active));
+        } else { // now > end
+            h.vb.txtStatus.setText("Đã bắt đầu");
+            h.vb.txtStatus.setTextColor(h.vb.getRoot().getContext().getColor(com.example.educonnect.R.color.red));
+        }
+    }
+
+    private long parseIsoToMillis(String iso) {
+        try {
+            // Format: yyyy-MM-ddTHH:mm:ss
+            String[] parts = iso.split("T");
+            String[] ymd = parts[0].split("-");
+            String[] hms = parts[1].split(":");
+            java.util.Calendar c = java.util.Calendar.getInstance();
+            c.set(java.lang.Integer.parseInt(ymd[0]), java.lang.Integer.parseInt(ymd[1]) - 1, java.lang.Integer.parseInt(ymd[2]),
+                    java.lang.Integer.parseInt(hms[0]), java.lang.Integer.parseInt(hms[1]), java.lang.Integer.parseInt(hms[2]));
+            c.set(java.util.Calendar.MILLISECOND, 0);
+            return c.getTimeInMillis();
+        } catch (Exception e) {
+            return -1L;
+        }
+    }
+
+    private String mapClassIdToName(String classId) {
+        if (classId == null) return "";
+        switch (classId) {
+            case "class01": return "10A1";
+            case "class02": return "11A2";
+            case "class03": return "12A2";
+            case "class04": return "12A1";
+            case "class05": return "12A6";
+            default: return classId;
+        }
     }
 }
 

@@ -33,27 +33,46 @@ public class StudentAdapter extends RecyclerView.Adapter<StudentAdapter.VH> {
     public void onBindViewHolder(@NonNull VH h, int pos) {
         final Context ctx = h.itemView.getContext();   // dùng 1 lần ở đây
         final Student st = data.get(pos);
-        h.vb.tvName.setText(st.name);
-        applyStatus(ctx, h, st.status);
+        h.vb.tvName.setText(st.getName());
+        applyStatus(ctx, h, st.getStatus());
 
         // Bắt tên (string) để dùng trong lambda, tránh bắt cả đối tượng st
-        final String studentName = st.name;
+        final String studentName = st.getName();
+        final String note = (st.getNote() != null && !st.getNote().isEmpty() && !st.getNote().equals("no")) ? st.getNote() : "";
+        final String homework = (st.getHomework() != null && !st.getHomework().isEmpty() && !st.getHomework().equals("no")) ? st.getHomework() : "";
+        final String focus = (st.getFocus() != null && !st.getFocus().isEmpty() && !st.getFocus().equals("no")) ? st.getFocus() : "";
+        final int position = pos; // Lưu position để cập nhật sau
 
         // Mở trang "Thái độ học tập" khi bấm vào tên
         h.vb.tvName.setOnClickListener(v -> {
-            Intent i = new Intent(ctx, com.example.educonnect.ui.attendance.StudentEvaluationActivity.class);
-            i.putExtra("student_name", studentName);
-            ctx.startActivity(i);
+            // Kiểm tra xem context có phải Activity không để dùng startActivityForResult
+            if (ctx instanceof android.app.Activity) {
+                android.app.Activity activity = (android.app.Activity) ctx;
+                Intent i = new Intent(ctx, com.example.educonnect.ui.attendance.StudentEvaluationActivity.class);
+                i.putExtra("student_name", studentName);
+                i.putExtra("note", note);
+                i.putExtra("homework", homework);
+                i.putExtra("focus", focus);
+                activity.startActivityForResult(i, position);
+            } else {
+                // Fallback nếu không phải Activity
+                Intent i = new Intent(ctx, com.example.educonnect.ui.attendance.StudentEvaluationActivity.class);
+                i.putExtra("student_name", studentName);
+                i.putExtra("note", note);
+                i.putExtra("homework", homework);
+                i.putExtra("focus", focus);
+                ctx.startActivity(i);
+            }
         });
 
         // Đổi trạng thái điểm danh khi bấm chip
         h.vb.chipStatus.setOnClickListener(v -> {
-            switch (st.status) {
-                case PRESENT: st.status = Student.Status.LATE; break;
-                case LATE:    st.status = Student.Status.ABSENT; break;
-                default:      st.status = Student.Status.PRESENT; break;
+            switch (st.getStatus()) {
+                case PRESENT: st.setStatus(Student.Status.LATE); break;
+                case LATE:    st.setStatus(Student.Status.ABSENT); break;
+                default:      st.setStatus(Student.Status.PRESENT); break;
             }
-            applyStatus(ctx, h, st.status);
+            applyStatus(ctx, h, st.getStatus());
             if (onChanged != null) onChanged.onChanged();
         });
     }

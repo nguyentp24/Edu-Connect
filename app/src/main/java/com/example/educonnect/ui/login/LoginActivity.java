@@ -12,7 +12,6 @@ import com.example.educonnect.databinding.ActivityLoginBinding;
 import com.example.educonnect.ui.main.MainActivity;
 import com.example.educonnect.api.ApiClient;
 import com.example.educonnect.model.Classroom;
-import com.example.educonnect.model.LoginRequest;
 import com.example.educonnect.model.Teacher;
 
 import com.google.gson.JsonElement;
@@ -20,19 +19,24 @@ import com.google.gson.JsonObject;
 
 import java.util.List;
 
+import com.example.educonnect.model.request.LoginRequest;
+import com.example.educonnect.model.response.LoginResponse;
+import com.example.educonnect.utils.SessionManager;
+
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
 public class LoginActivity extends AppCompatActivity {
     private ActivityLoginBinding vb;
-    private ApiClient.ApiService apiService;
+    private SessionManager sessionManager;
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         vb = ActivityLoginBinding.inflate(getLayoutInflater());
         setContentView(vb.getRoot());
-        apiService = ApiClient.service();
+
+        sessionManager = new SessionManager(this);
         vb.btnSignIn.setOnClickListener(v -> doLogin());
     }
 
@@ -45,107 +49,75 @@ public class LoginActivity extends AppCompatActivity {
         }
         setLoading(true);
 
-        apiService.login(new LoginRequest(email, pass)).enqueue(new Callback<JsonObject>() {
-            @Override public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
+        ApiClient.ApiService api = ApiClient.service();
+
+        api.login(new LoginRequest(email, pass)).enqueue(new Callback<LoginResponse>() {
+            @Override public void onResponse(Call<LoginResponse> call, Response<LoginResponse> response) {
+                setLoading(false);
                 if (response.isSuccessful() && response.body() != null) {
-                    JsonObject body = response.body();
-
-                    JsonElement tokenElement = body.get("token");
-                    if (tokenElement == null || tokenElement.isJsonNull()) {
-                        setLoading(false);
-                        Toast.makeText(LoginActivity.this, "Lỗi: Login không trả về token", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-                    String authToken = "Bearer " + tokenElement.getAsString();
-
-                    JsonElement userIdElement = body.get("userId");
-                    if (userIdElement == null || userIdElement.isJsonNull()) {
-                        setLoading(false);
-                        Toast.makeText(LoginActivity.this, "Lỗi: Login không trả về userId", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-                    String userId = userIdElement.getAsString();
-
-                    fetchTeacherInfo(authToken, userId);
-
-                } else {
-                    setLoading(false);
-                    Toast.makeText(LoginActivity.this, "Đăng nhập thất bại: " + response.code(), Toast.LENGTH_SHORT).show();
-                }
-            }
-            @Override public void onFailure(Call<JsonObject> call, Throwable t) {
-                setLoading(false);
-                Toast.makeText(LoginActivity.this, "Lỗi mạng (Login): " + t.getMessage(), Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
-
-    private void fetchTeacherInfo(String authToken, String userId) {
-        apiService.getTeacherInfo(userId, authToken).enqueue(new Callback<Teacher>() {
-            @Override
-            public void onResponse(Call<Teacher> call, Response<Teacher> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    Teacher teacher = response.body();
-                    String realTeacherId = teacher.getTeacherId();
-                    String teacherName = teacher.getFirstName() + " " + teacher.getLastName();
-
-                    if (realTeacherId == null || realTeacherId.isEmpty()) {
-                        setLoading(false);
-                        Toast.makeText(LoginActivity.this, "Lỗi: Không thể lấy teacherId từ User", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-                    fetchClassId(authToken, realTeacherId, userId, teacherName);
-                } else {
-                    setLoading(false);
-                    Toast.makeText(LoginActivity.this, "Lỗi: Không thể lấy thông tin Teacher (ID: " + userId + ")", Toast.LENGTH_LONG).show();
-                }
-            }
-            @Override
-            public void onFailure(Call<Teacher> call, Throwable t) {
-                setLoading(false);
-                Toast.makeText(LoginActivity.this, "Lỗi mạng (GetTeacher): " + t.getMessage(), Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
-
-    private void fetchClassId(String authToken, String teacherId, String userId, String teacherName) {
-
-        apiService.getClassroomByTeacherId(teacherId, authToken).enqueue(new Callback<List<Classroom>>() {
-            @Override
-            public void onResponse(Call<List<Classroom>> call, Response<List<Classroom>> response) {
-                setLoading(false);
-
-                if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
-                    Classroom classroom = response.body().get(0);
-                    String classId = classroom.getClassId();
-                    String className = classroom.getClassName();
-
-                    if(classId == null || classId.isEmpty() || className == null || className.isEmpty()){
-                        Toast.makeText(LoginActivity.this, "Lỗi: Lớp học trả về thiếu classId hoặc className.", Toast.LENGTH_LONG).show();
-                        return;
-                    }
-
-                    SharedPreferences prefs = getSharedPreferences("EduConnectApp", Context.MODE_PRIVATE);
-                    SharedPreferences.Editor editor = prefs.edit();
-                    editor.putString("token", authToken);
-                    editor.putString("classId", classId);
-                    editor.putString("userId", userId);
-                    editor.putString("teacherId", teacherId);
-                    editor.putString("teacherName", teacherName); // <-- Đã thêm
-                    editor.putString("className", className);     // <-- Đã thêm
-                    editor.apply();
-
-                    startActivity(new Intent(LoginActivity.this, MainActivity.class));
-                    finish();
-
+                    LoginResponse loginResponse = response.body();
+                    // Lưu thông tin đăng nhập vào SharedPreferences
+                    sessionManager.saveLoginSession(
+                            loginResponse.getToken(),
+                            loginResponse.getUserId(),
+                            loginResponse.getFullName(),
+                            loginResponse.getEmail(),
+                            loginResponse.getRole()
+                    );
+                    // Sau khi login thành công -> gọi API lấy thông tin Teacher
+                    fetchTeacherAndGo(loginResponse.getUserId(), loginResponse.getToken());
                 } else {
                     Toast.makeText(LoginActivity.this, "Lỗi: Không tìm thấy lớp nào cho giáo viên này (TID: " + teacherId + ")", Toast.LENGTH_LONG).show();
                 }
             }
-            @Override
-            public void onFailure(Call<List<Classroom>> call, Throwable t) {
+
+            @Override public void onFailure(Call<LoginResponse> call, Throwable t) {
                 setLoading(false);
                 Toast.makeText(LoginActivity.this, "Lỗi mạng (GetClass): " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void fetchTeacherAndGo(String userId, String token) {
+        ApiClient.ApiService api = ApiClient.service();
+        api.getTeacher(userId, "Bearer " + token).enqueue(new retrofit2.Callback<com.example.educonnect.model.Teacher>() {
+            @Override public void onResponse(retrofit2.Call<com.example.educonnect.model.Teacher> call, retrofit2.Response<com.example.educonnect.model.Teacher> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    com.example.educonnect.model.Teacher t = response.body();
+                    sessionManager.saveTeacher(t.getTeacherId(), t.getPhoneNumber(), t.getUserImage());
+                    // Sau khi lấy teacher -> lấy luôn danh sách courses theo teacherId và lưu
+                    fetchCoursesByTeacherAndGo(t.getTeacherId(), token);
+                    return;
+                }
+                // fallback
+                startActivity(new Intent(LoginActivity.this, MainActivity.class));
+                finish();
+            }
+
+            @Override public void onFailure(retrofit2.Call<com.example.educonnect.model.Teacher> call, Throwable t) {
+                // Nếu lỗi, vẫn cho vào app với thông tin login đã có
+                startActivity(new Intent(LoginActivity.this, MainActivity.class));
+                finish();
+            }
+        });
+    }
+
+    private void fetchCoursesByTeacherAndGo(String teacherId, String token) {
+        ApiClient.ApiService api = ApiClient.service();
+        api.getCoursesByTeacher(teacherId, "Bearer " + token).enqueue(new retrofit2.Callback<java.util.List<com.example.educonnect.model.Course>>() {
+            @Override public void onResponse(retrofit2.Call<java.util.List<com.example.educonnect.model.Course>> call, retrofit2.Response<java.util.List<com.example.educonnect.model.Course>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    com.google.gson.Gson gson = new com.google.gson.Gson();
+                    String json = gson.toJson(response.body());
+                    sessionManager.saveCoursesJson(json);
+                }
+                startActivity(new Intent(LoginActivity.this, MainActivity.class));
+                finish();
+            }
+
+            @Override public void onFailure(retrofit2.Call<java.util.List<com.example.educonnect.model.Course>> call, Throwable t) {
+                startActivity(new Intent(LoginActivity.this, MainActivity.class));
+                finish();
             }
         });
     }

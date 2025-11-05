@@ -53,6 +53,11 @@
         <activity
             android:name="com.example.educonnect.ui.reports.ReportDetailActivity"
             android:exported="false" />
+      
+        <activity
+            android:name="com.example.educonnect.ui.profile.ParentProfileActivity"
+            android:exported="false"
+            android:theme="@style/Theme.EduConnect" />
 
     </application>
 </manifest>

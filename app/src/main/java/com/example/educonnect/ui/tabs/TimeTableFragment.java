@@ -9,12 +9,17 @@ import android.view.ViewGroup;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.educonnect.adapter.DayChipAdapter;
 import com.example.educonnect.adapter.ScheduleAdapter;
 import com.example.educonnect.databinding.FragmentTimetableBinding;
 import com.example.educonnect.model.DayChip;
 import com.example.educonnect.model.ScheduleItem;
+import com.example.educonnect.model.Course;
+import com.example.educonnect.api.ApiClient;
+import com.example.educonnect.utils.SessionManager;
 import com.example.educonnect.ui.attendance.AttendanceActivity;
 import com.google.android.material.datepicker.MaterialDatePicker;
 
@@ -31,6 +36,7 @@ public class TimeTableFragment extends Fragment {
     private DayChipAdapter chipAdapter;
     private Calendar selectedDate;     // ngày đang chọn
     private final Locale vi = new Locale("vi", "VN");
+    private final List<Course> allCourses = new ArrayList<>();
 
     @Nullable @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -41,7 +47,8 @@ public class TimeTableFragment extends Fragment {
         // selectedDate.set(2025, Calendar.JULY, 24);
 
         setupHeaderAndChips();
-        setupSchedulesFor(selectedDate);  // dữ liệu demo
+        // Tải dữ liệu thật khi vào màn
+        fetchCoursesForTeacher();
 
         return vb.getRoot();
     }
@@ -54,19 +61,28 @@ public class TimeTableFragment extends Fragment {
         // Click vào header mở DatePicker
         vb.txtBigDate.setOnClickListener(v -> openDatePicker());
 
-        // Chips RecyclerView
-        vb.rvDays.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
+        // Chips RecyclerView: 7 cột, thêm spacing đều giữa các chip
+        vb.rvDays.setHasFixedSize(true);
+        vb.rvDays.setLayoutManager(new GridLayoutManager(getContext(), 7, GridLayoutManager.VERTICAL, false));
+//        final int spacingPx = dp(0);
+//        vb.rvDays.addItemDecoration(new RecyclerView.ItemDecoration() {
+//            @Override
+//            public void getItemOffsets(android.graphics.Rect outRect, View view, RecyclerView parent, RecyclerView.State state) {
+//                outRect.left = spacingPx;
+//                outRect.right = spacingPx;
+//            }
+//        });
         buildWeekChipsAround(selectedDate);
 
         chipAdapter = new DayChipAdapter(days, pos -> {
             // chọn ngày theo chip
-            for (int i = 0; i < days.size(); i++) days.get(i).selected = (i == pos);
-            selectedDate = (Calendar) days.get(pos).date.clone();
+            for (int i = 0; i < days.size(); i++) days.get(i).setSelected(i == pos);
+            selectedDate = (Calendar) days.get(pos).getDate().clone();
             chipAdapter.notifyDataSetChanged();
             vb.rvDays.smoothScrollToPosition(pos);
 
             updateBigDateText();
-            setupSchedulesFor(selectedDate);
+            updateSchedulesForSelectedDate();
         });
         vb.rvDays.setAdapter(chipAdapter);
     }
@@ -93,7 +109,7 @@ public class TimeTableFragment extends Fragment {
             int selIdx = findSelectedIndex();
             if (selIdx >= 0) vb.rvDays.scrollToPosition(selIdx);
 
-            setupSchedulesFor(selectedDate);
+            updateSchedulesForSelectedDate();
         });
 
         picker.show(getParentFragmentManager(), "date_picker");
@@ -125,7 +141,9 @@ public class TimeTableFragment extends Fragment {
 
     /** Tìm index của chip selected */
     private int findSelectedIndex() {
-        for (int i = 0; i < days.size(); i++) if (days.get(i).selected) return i;
+        for (int i = 0; i < days.size(); i++)
+            if (days.get(i).isSelected())
+                return i;
         return -1;
     }
 
@@ -141,23 +159,108 @@ public class TimeTableFragment extends Fragment {
                 && a.get(Calendar.DAY_OF_YEAR) == b.get(Calendar.DAY_OF_YEAR);
     }
 
-    /** Dữ liệu lịch demo theo ngày */
-    private void setupSchedulesFor(Calendar day) {
-        // TODO: thay bằng call API/filter theo 'day' nếu có
+    /** Lọc và hiển thị lịch theo ngày đã chọn từ danh sách courses */
+    private void updateSchedulesForSelectedDate() {
         ArrayList<ScheduleItem> list = new ArrayList<>();
-        list.add(new ScheduleItem("7:00 SA", "7:45 SA", "Toán", "12A1", "Đã kết thúc", false));
-        list.add(new ScheduleItem("7:50 SA", "8:35 SA", "Toán", "12A6", "Đã kết thúc", false));
-        list.add(new ScheduleItem("8:50 SA", "9:35 SA", "Toán", "12A2", "Đã kết thúc", false));
-        list.add(new ScheduleItem("10:30 SA", "11:15 SA", "Toán", "10A1", "Đã kết thúc", false));
-        list.add(new ScheduleItem("1:30 CH", "",          "Toán", "10A1", "Đã kết thúc", false));
+        if (!allCourses.isEmpty()) {
+            for (Course c : allCourses) {
+                if (isSameDayIso(c.getStartTime(), selectedDate)) {
+                    String start = formatTime(c.getStartTime());
+                    String end   = formatTime(c.getEndTime());
+                    boolean attended = c.getStatus() != null && c.getStatus().equalsIgnoreCase("present");
+                    list.add(new ScheduleItem(start, end, c.getStartTime(), c.getEndTime(), c.getSubjectName(), c.getClassId(), "", attended, c.getCourseId()));
+                }
+            }
+        }
+
+        // sắp xếp theo thời gian bắt đầu tăng dần
+        java.util.Collections.sort(list, (a, b) -> Integer.compare(
+                timeMinutesIso(a.getStartIso()),
+                timeMinutesIso(b.getStartIso())
+        ));
 
         vb.rvSchedules.setLayoutManager(new LinearLayoutManager(getContext()));
         vb.rvSchedules.setAdapter(new ScheduleAdapter(list, item -> {
             Intent i = new Intent(requireContext(), AttendanceActivity.class);
-            i.putExtra("subject", item.subject);
-            i.putExtra("time", item.start + (item.end == null || item.end.isEmpty() ? "" : " - " + item.end));
-            i.putExtra("class", item.classroom);
+            i.putExtra("subject", item.getSubject());
+            i.putExtra("time", item.getStart() + (item.getEnd() == null || item.getEnd().isEmpty() ? "" : " - " + item.getEnd()));
+            i.putExtra("klass", item.getKlass());
+            i.putExtra("courseId", item.getCourseId());
+            // Nếu chưa điểm danh (API status = unpresent) thì yêu cầu AttendanceActivity tự fetch học sinh
+            i.putExtra("shouldFetchStudents", !item.isAttended());
+            i.putExtra("isPresent", item.isAttended());
             startActivity(i);
         }));
+    }
+
+    /** Gọi API lấy courses theo teacherId */
+    private void fetchCoursesForTeacher() {
+        SessionManager sm = new SessionManager(requireContext());
+        String teacherId = sm.getTeacherId();
+        String token = sm.getToken();
+        if (teacherId == null || token == null) {
+            updateSchedulesForSelectedDate();
+            return;
+        }
+        ApiClient.ApiService api = ApiClient.service();
+        api.getCoursesByTeacher(teacherId, "Bearer " + token).enqueue(new retrofit2.Callback<List<Course>>() {
+            @Override public void onResponse(retrofit2.Call<List<Course>> call, retrofit2.Response<List<Course>> response) {
+                allCourses.clear();
+                if (response.isSuccessful() && response.body() != null) {
+                    allCourses.addAll(response.body());
+                }
+                updateSchedulesForSelectedDate();
+            }
+
+            @Override public void onFailure(retrofit2.Call<List<Course>> call, Throwable t) {
+                updateSchedulesForSelectedDate();
+            }
+        });
+    }
+
+    private boolean isSameDayIso(String iso, Calendar day) {
+        try {
+            // iso: yyyy-MM-ddTHH:mm:ss
+            String[] parts = iso.split("T");
+            String[] ymd = parts[0].split("-");
+            int y = Integer.parseInt(ymd[0]);
+            int m = Integer.parseInt(ymd[1]) - 1;
+            int d = Integer.parseInt(ymd[2]);
+            return day.get(Calendar.YEAR) == y && day.get(Calendar.MONTH) == m && day.get(Calendar.DAY_OF_MONTH) == d;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private String formatTime(String iso) {
+        if (iso == null || !iso.contains("T")) return "";
+        int t = iso.indexOf('T');
+        int end = Math.min(iso.length(), t + 6); // HH:mm
+        String hm = iso.substring(t + 1, end);
+        String[] sp = hm.split(":");
+        int h = Integer.parseInt(sp[0]);
+        int min = Integer.parseInt(sp[1]);
+        String suffix = h < 12 ? "SA" : "CH";
+        int h12 = h % 12; if (h12 == 0) h12 = 12;
+        return h12 + ":" + (min < 10 ? "0" + min : min) + " " + suffix;
+    }
+
+    // Lấy tổng phút từ đầu ngày cho chuỗi ISO, phục vụ sắp xếp
+    private int timeMinutesIso(String iso) {
+        if (iso == null || !iso.contains("T")) return 0;
+        int t = iso.indexOf('T');
+        int end = Math.min(iso.length(), t + 6);
+        String hm = iso.substring(t + 1, end); // HH:mm
+        String[] sp = hm.split(":");
+        int h = Integer.parseInt(sp[0]);
+        int m = Integer.parseInt(sp[1]);
+        return h * 60 + m;
+    }
+
+    // bỏ vì đã dùng startIso thực
+
+    private int dp(int value) {
+        float density = getResources().getDisplayMetrics().density;
+        return Math.round(value * density);
     }
 }
