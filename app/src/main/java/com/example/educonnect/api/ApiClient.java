@@ -1,18 +1,23 @@
 package com.example.educonnect.api;
 
 import com.example.educonnect.model.Course;
-import com.example.educonnect.model.Parent;
-import com.example.educonnect.model.Teacher;
+import com.example.educonnect.model.ClassroomStudent;
+import com.example.educonnect.model.AttendanceItem;
+import com.example.educonnect.model.request.LoginRequest;
+import com.example.educonnect.model.request.CourseStatusRequest;
 import com.example.educonnect.model.response.LoginResponse;
 import com.google.gson.JsonObject;
 import com.example.educonnect.model.request.LoginRequest;
 import retrofit2.Call;
+import okhttp3.ResponseBody;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 import retrofit2.http.Body;
+import retrofit2.http.DELETE;
 import retrofit2.http.GET;
 import retrofit2.http.Header;
 import retrofit2.http.POST;
+import retrofit2.http.PUT;
 import retrofit2.http.Path;
 
 /**
@@ -59,6 +64,26 @@ public final class ApiClient {
         // Courses by teacherId: GET /api/Course/teacher/{teacherId}
         @GET("api/Course/teacher/{teacherId}")
         Call<java.util.List<Course>> getCoursesByTeacher(@Path("teacherId") String teacherId, @Header("Authorization") String bearerToken);
+
+        // Classroom students by classId: GET /api/Classroom/{classId}/students
+        @GET("api/Classroom/{classId}/students")
+        Call<java.util.List<ClassroomStudent>> getClassroomStudents(@Path("classId") String classId, @Header("Authorization") String bearerToken);
+
+        // Attendance by courseId: GET /api/Attendance/course/{courseId}
+        @GET("api/Attendance/course/{courseId}")
+        Call<java.util.List<AttendanceItem>> getAttendanceByCourse(@Path("courseId") String courseId, @Header("Authorization") String bearerToken);
+
+        // Create/Update attendance: POST /api/Attendance
+        @POST("api/Attendance")
+        Call<ResponseBody> saveAttendance(@Body java.util.List<AttendanceItem> attendanceList, @Header("Authorization") String bearerToken);
+
+        // Update course status: PUT /api/Course/status
+        @PUT("api/Course/status")
+        Call<ResponseBody> updateCourseStatus(@Body CourseStatusRequest request, @Header("Authorization") String bearerToken);
+
+        // Delete attendance by courseId: DELETE /api/Attendance/course/{courseId}
+        @DELETE("api/Attendance/course/{courseId}")
+        Call<ResponseBody> deleteAttendanceByCourse(@Path("courseId") String courseId, @Header("Authorization") String bearerToken);
     }
 }
 

@@ -100,6 +100,7 @@
                     android:layout_height="wrap_content"/>
 
                 <View
+                    android:id="@+id/dotStatus"
                     android:layout_marginStart="8dp"
                     android:layout_marginEnd="6dp"
                     android:layout_width="6dp"

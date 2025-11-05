@@ -4,19 +4,39 @@ import com.google.gson.annotations.SerializedName;
 
 public class Student {
     public String name;
+    public String studentId; // ID từ API classroom
     public Status status;
 
-    @SerializedName("studentId")
-    public String studentId;
+    public String note;
+    public String homework;
+    public String focus;
 
     public enum Status { PRESENT, LATE, ABSENT }
 
-    public Student(String name, Status st) { this.name = name; this.status = st; }
-
-    // Constructor mới, dùng khi lấy dữ liệu có studentId từ API
-    public Student(String studentId, String name) {
-        this.studentId = studentId;
+    public Student(String name, Status st) {
         this.name = name;
-        this.status = Status.PRESENT; // Gán một trạng thái mặc định
+        this.studentId = "";
+        this.status = st;
+        this.note = "";
+        this.homework = "";
+        this.focus = "";
+    }
+
+    public Student(String name, String studentId, Status st) {
+        this.name = name;
+        this.studentId = studentId != null ? studentId : "";
+        this.status = st;
+        this.note = "";
+        this.homework = "";
+        this.focus = "";
+    }
+
+    public Student(String name, String studentId, Status st, String note, String homework, String focus) {
+        this.name = name;
+        this.studentId = studentId != null ? studentId : "";
+        this.status = st;
+        this.note = note != null ? note : "";
+        this.homework = homework != null ? homework : "";
+        this.focus = focus != null ? focus : "";
     }
 }

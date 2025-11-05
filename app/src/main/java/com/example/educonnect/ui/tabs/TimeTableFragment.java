@@ -141,7 +141,9 @@ public class TimeTableFragment extends Fragment {
 
     /** Tìm index của chip selected */
     private int findSelectedIndex() {
-        for (int i = 0; i < days.size(); i++) if (days.get(i).selected) return i;
+        for (int i = 0; i < days.size(); i++)
+            if (days.get(i).selected)
+                return i;
         return -1;
     }
 
@@ -165,10 +167,17 @@ public class TimeTableFragment extends Fragment {
                 if (isSameDayIso(c.startTime, selectedDate)) {
                     String start = formatTime(c.startTime);
                     String end   = formatTime(c.endTime);
-                    list.add(new ScheduleItem(start, end, c.subjectName, c.classId, "Đã kết thúc", false));
+                    boolean attended = c.status != null && c.status.equalsIgnoreCase("present");
+                    list.add(new ScheduleItem(start, end, c.startTime, c.endTime, c.subjectName, c.classId, "", attended, c.courseId));
                 }
             }
         }
+
+        // sắp xếp theo thời gian bắt đầu tăng dần
+        java.util.Collections.sort(list, (a, b) -> Integer.compare(
+                timeMinutesIso(a.startIso),
+                timeMinutesIso(b.startIso)
+        ));
 
         vb.rvSchedules.setLayoutManager(new LinearLayoutManager(getContext()));
         vb.rvSchedules.setAdapter(new ScheduleAdapter(list, item -> {
@@ -176,6 +185,10 @@ public class TimeTableFragment extends Fragment {
             i.putExtra("subject", item.subject);
             i.putExtra("time", item.start + (item.end == null || item.end.isEmpty() ? "" : " - " + item.end));
             i.putExtra("klass", item.klass);
+            i.putExtra("courseId", item.courseId);
+            // Nếu chưa điểm danh (API status = unpresent) thì yêu cầu AttendanceActivity tự fetch học sinh
+            i.putExtra("shouldFetchStudents", !item.attended);
+            i.putExtra("isPresent", item.attended);
             startActivity(i);
         }));
     }
@@ -221,7 +234,9 @@ public class TimeTableFragment extends Fragment {
 
     private String formatTime(String iso) {
         if (iso == null || !iso.contains("T")) return "";
-        String hm = iso.substring(iso.indexOf('T') + 1, Math.min(iso.length(), iso.indexOf('T') + 5));
+        int t = iso.indexOf('T');
+        int end = Math.min(iso.length(), t + 6); // HH:mm
+        String hm = iso.substring(t + 1, end);
         String[] sp = hm.split(":");
         int h = Integer.parseInt(sp[0]);
         int min = Integer.parseInt(sp[1]);
@@ -229,6 +244,20 @@ public class TimeTableFragment extends Fragment {
         int h12 = h % 12; if (h12 == 0) h12 = 12;
         return h12 + ":" + (min < 10 ? "0" + min : min) + " " + suffix;
     }
+
+    // Lấy tổng phút từ đầu ngày cho chuỗi ISO, phục vụ sắp xếp
+    private int timeMinutesIso(String iso) {
+        if (iso == null || !iso.contains("T")) return 0;
+        int t = iso.indexOf('T');
+        int end = Math.min(iso.length(), t + 6);
+        String hm = iso.substring(t + 1, end); // HH:mm
+        String[] sp = hm.split(":");
+        int h = Integer.parseInt(sp[0]);
+        int m = Integer.parseInt(sp[1]);
+        return h * 60 + m;
+    }
+
+    // bỏ vì đã dùng startIso thực
 
     private int dp(int value) {
         float density = getResources().getDisplayMetrics().density;
