@@ -10,6 +10,10 @@ public class Student {
     private String homework;
     private String focus;
 
+    public String getFullName() {
+        return name;
+    }
+
     public enum Status { PRESENT, LATE, ABSENT }
 
     public Student(String name, Status st) {

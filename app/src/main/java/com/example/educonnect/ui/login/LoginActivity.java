@@ -41,6 +41,7 @@ public class LoginActivity extends AppCompatActivity {
         setLoading(true);
 
         ApiClient.ApiService api = ApiClient.service();
+
         api.login(new LoginRequest(email, pass)).enqueue(new Callback<LoginResponse>() {
             @Override public void onResponse(Call<LoginResponse> call, Response<LoginResponse> response) {
                 setLoading(false);
