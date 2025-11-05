@@ -32,7 +32,7 @@
     <string name="students">Học sinh</string>
     <string name="today_periods">Tiết học hôm nay</string>
     <string name="reports">Báo cáo</string>
-    <string name="no_absent">Thông báo học sinh vắng mặt hôm nay</string>
+    <string name="notificationDashboard">Thông báo hôm nay!</string>
 
     <string name="add_student">Thêm học sinh</string>
     <string name="student_name">Họ và tên</string>

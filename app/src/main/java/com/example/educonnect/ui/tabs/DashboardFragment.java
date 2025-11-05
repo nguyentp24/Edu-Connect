@@ -18,6 +18,8 @@ import com.example.educonnect.model.ClassroomStudent;
 import com.example.educonnect.model.Course;
 import com.example.educonnect.databinding.FragmentDashboardBinding;
 import com.example.educonnect.model.Student;
+import com.example.educonnect.adapter.ScheduleAdapter;
+import com.example.educonnect.model.ScheduleItem;
 import com.example.educonnect.utils.SessionManager;
 
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -81,12 +83,18 @@ public class DashboardFragment extends Fragment {
         vb.tvTodayPeriods.setText("0");
         vb.tvReports.setText("2");
 
-        vb.tvNotice.setText(getString(com.example.educonnect.R.string.no_absent));
+        vb.tvNotice.setText(getString(com.example.educonnect.R.string.notificationDashboard));
 
         // Khởi tạo RecyclerView
         attendanceAdapter = new DashboardAttendanceAdapter(new ArrayList<>());
         vb.rvAttendanceList.setLayoutManager(new LinearLayoutManager(getContext()));
         vb.rvAttendanceList.setAdapter(attendanceAdapter);
+        vb.rvSchedules.setLayoutManager(new LinearLayoutManager(getContext()));
+
+        // Click handlers cho 3 cột
+        vb.colStudents.setOnClickListener(v1 -> showStudentsSection());
+        vb.colPeriods.setOnClickListener(v12 -> showSchedulesSection());
+        vb.colReports.setOnClickListener(v13 -> navigateToReportTab());
 
         // Lấy các lớp và tiết học từ SessionManager
         SessionManager sm = new SessionManager(requireContext());
@@ -158,6 +166,8 @@ public class DashboardFragment extends Fragment {
                     // Sau khi có courses hôm nay, gọi API attendance
                     if (!todayCourses.isEmpty() && currentClassId != null) {
                         loadAttendance(currentClassId, token);
+                        // Đồng thời chuẩn bị danh sách lịch hôm nay để hiển thị khi người dùng bấm
+                        buildTodaySchedules();
                     }
                 } else {
                     Toast.makeText(getContext(), "Lỗi lấy khóa học: " + response.message(), Toast.LENGTH_SHORT).show();
@@ -394,10 +404,14 @@ public class DashboardFragment extends Fragment {
 
         // Cập nhật thông báo
         if (displayItems.isEmpty()) {
-            vb.tvNotice.setText(getString(com.example.educonnect.R.string.no_absent));
+            vb.tvNotice.setText(getString(com.example.educonnect.R.string.notificationDashboard));
         } else {
-            vb.tvNotice.setText("Thông báo học sinh vắng mặt hôm nay");
+            vb.tvNotice.setText("Thông báo hôm nay!");
         }
+
+        // Hiển thị khu vực học sinh, ẩn lịch
+        vb.rvAttendanceList.setVisibility(View.VISIBLE);
+        vb.rvSchedules.setVisibility(View.GONE);
     }
 
     /**
@@ -427,6 +441,42 @@ public class DashboardFragment extends Fragment {
             return h12 + ":" + (min < 10 ? "0" + min : min) + " " + suffix;
         } catch (Exception e) {
             return "";
+        }
+    }
+
+    /**
+     * Dựng danh sách các lịch hôm nay từ todayCourses để tái sử dụng
+     */
+    private void buildTodaySchedules() {
+        ArrayList<ScheduleItem> list = new ArrayList<>();
+        if (!todayCourses.isEmpty()) {
+            for (Course c : todayCourses) {
+                String start = formatTime(c.startTime);
+                String end   = formatTime(c.endTime);
+                boolean attended = c.status != null && c.status.equalsIgnoreCase("present");
+                list.add(new ScheduleItem(start, end, c.startTime, c.endTime, c.subjectName, c.classId, "", attended, c.courseId));
+            }
+        }
+        vb.rvSchedules.setAdapter(new ScheduleAdapter(list, item -> {
+            // không điều hướng ở Dashboard khi bấm item, để đơn giản giữ nguyên
+        }));
+    }
+
+    private void showStudentsSection() {
+        vb.rvAttendanceList.setVisibility(View.VISIBLE);
+        vb.rvSchedules.setVisibility(View.GONE);
+    }
+
+    private void showSchedulesSection() {
+        vb.rvAttendanceList.setVisibility(View.GONE);
+        vb.rvSchedules.setVisibility(View.VISIBLE);
+    }
+
+    private void navigateToReportTab() {
+        android.view.View bottom = requireActivity().findViewById(com.example.educonnect.R.id.bottomNav);
+        if (bottom instanceof com.google.android.material.bottomnavigation.BottomNavigationView) {
+            ((com.google.android.material.bottomnavigation.BottomNavigationView) bottom)
+                    .setSelectedItemId(com.example.educonnect.R.id.nav_report);
         }
     }
 
