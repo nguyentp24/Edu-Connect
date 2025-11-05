@@ -40,7 +40,7 @@ public class ProfileFragment extends Fragment {
         // bấm vào chính card lớp -> mở danh sách học sinh
         vb.classItem.setOnClickListener(v -> {
             Intent i = new Intent(requireContext(), com.example.educonnect.ui.profile.ClassListActivity.class);
-            i.putExtra("klass", "10A1");
+            i.putExtra("class", "10A1");
             i.putExtra("teacher", "Nguyễn Văn A");
             i.putExtra("year", "2025-2026");
             startActivity(i);

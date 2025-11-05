@@ -46,5 +46,13 @@
             android:exported="false"
             android:theme="@style/Theme.EduConnect"/>
 
+        <activity
+            android:name="com.example.educonnect.ui.reports.ReportHistoryActivity"
+            android:exported="false" />
+
+        <activity
+            android:name="com.example.educonnect.ui.reports.ReportDetailActivity"
+            android:exported="false" />
+
     </application>
 </manifest>

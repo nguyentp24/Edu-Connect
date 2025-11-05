@@ -39,11 +39,11 @@ public class ClassListActivity extends AppCompatActivity {
         setContentView(vb.getRoot());
 
         // Header từ Intent
-        String klass   = getIntent().getStringExtra("klass");
+        String classroom   = getIntent().getStringExtra("class");
         String teacher = getIntent().getStringExtra("teacher");
         String year    = getIntent().getStringExtra("year");
 
-        vb.tvClass.setText(klass != null ? "Lớp: " + klass : "Lớp: 10A1");
+        vb.tvClass.setText(classroom != null ? "Lớp: " + classroom : "Lớp: 10A1");
         vb.tvTeacher.setText(teacher != null ? "GV chủ nhiệm:  " + teacher : "GV chủ nhiệm:  Nguyễn Văn A");
         vb.tvYear.setText(year != null ? "Năm học:  " + year : "Năm học:  2025-2026");
 

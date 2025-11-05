@@ -32,7 +32,7 @@ public class ScheduleAdapter extends RecyclerView.Adapter<ScheduleAdapter.VH> {
         h.vb.txtTimeEnd.setText(it.end);
         h.vb.txtSubject.setText(it.subject);
         h.vb.txtStatus.setText(it.status);
-        h.vb.txtClass.setText("Lớp: " + it.klass);
+        h.vb.txtClass.setText("Lớp: " + it.classroom);
         h.vb.txtAttendance.setText(it.attended ? "Đã điểm danh" : "Chưa điểm danh");
 
         h.vb.getRoot().setOnClickListener(v -> {

@@ -26,10 +26,10 @@ public class AttendanceActivity extends AppCompatActivity {
 
         String subject = getIntent().getStringExtra("subject");
         String time    = getIntent().getStringExtra("time");
-        String klass   = getIntent().getStringExtra("klass");
+        String classroom   = getIntent().getStringExtra("class");
         vb.tvSubject.setText(getString(R.string.subject_fmt, subject != null ? subject : "—"));
         vb.tvTime.setText(getString(R.string.time_fmt, time != null ? time : "—"));
-        vb.tvClass.setText(getString(R.string.class_fmt, klass != null ? klass : "—"));
+        vb.tvClass.setText(getString(R.string.class_fmt, classroom != null ? classroom : "—"));
 
         vb.btnBack.setOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
 

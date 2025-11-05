@@ -156,7 +156,7 @@ public class TimeTableFragment extends Fragment {
             Intent i = new Intent(requireContext(), AttendanceActivity.class);
             i.putExtra("subject", item.subject);
             i.putExtra("time", item.start + (item.end == null || item.end.isEmpty() ? "" : " - " + item.end));
-            i.putExtra("klass", item.klass);
+            i.putExtra("class", item.classroom);
             startActivity(i);
         }));
     }
