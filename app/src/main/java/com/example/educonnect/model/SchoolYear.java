@@ -18,9 +18,8 @@ public class SchoolYear {
     public String getSchoolYearId() { return schoolYearId; }
     public String getStartDate() { return startDate; }
     public String getEndDate() { return endDate; }
-    public String getStatus() { return status; }
 
-    // Getters/Setters
+    public String getStatus() { return status; }
     public String getLabel() { return label; }
     public void setLabel(String label) { this.label = label; }
     public String getValue() { return value; }

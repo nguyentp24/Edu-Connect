@@ -8,11 +8,9 @@ import com.example.educonnect.model.TermRequest;
 import com.example.educonnect.model.Report;
 import com.example.educonnect.model.ReportBotRequest;
 
-import com.google.gson.JsonObject;
 import com.google.gson.annotations.SerializedName;
 
 import com.example.educonnect.model.Parent;
-import com.example.educonnect.model.Class; // model Class, avoid java.lang.Class
 import com.example.educonnect.model.Teacher;
 import com.example.educonnect.model.Course;
 import com.example.educonnect.model.ClassroomStudent;
@@ -165,9 +163,9 @@ public final class ApiClient {
         Call<List<AttendanceItem>> getAttendanceByClass(@Path("classId") String classId, @Header("Authorization") String bearerToken);
 
         // Lấy danh sách lớp học theo teacherId: GET /api/Classroom?teacherId={teacherId}
-        @GET("api/Classroom")
-        Call<java.util.List<Class>> getClasses(@Query("teacherId") String teacherId, @Header("Authorization") String bearerToken);
-      
+//        @GET("api/Classroom")
+//        Call<java.util.List<Class>> getClasses(@Query("teacherId") String teacherId, @Header("Authorization") String bearerToken);
+//
         @GET("api/Term/{TermId}")
         Call<Term> getTermDetails(
                 @Path("TermId") String termId,

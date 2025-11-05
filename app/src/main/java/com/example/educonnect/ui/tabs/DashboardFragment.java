@@ -13,11 +13,10 @@ import androidx.fragment.app.Fragment;
 import com.example.educonnect.api.ApiClient;
 import com.example.educonnect.adapter.DashboardAttendanceAdapter;
 import com.example.educonnect.model.AttendanceItem;
-import com.example.educonnect.model.Class;
+import com.example.educonnect.model.Classroom;
 import com.example.educonnect.model.ClassroomStudent;
 import com.example.educonnect.model.Course;
 import com.example.educonnect.databinding.FragmentDashboardBinding;
-import com.example.educonnect.model.Student;
 import com.example.educonnect.adapter.ScheduleAdapter;
 import com.example.educonnect.model.ScheduleItem;
 import com.example.educonnect.utils.SessionManager;
@@ -112,12 +111,12 @@ public class DashboardFragment extends Fragment {
         ApiClient.ApiService apiService = ApiClient.service();
 
         // Gọi API để lấy lớp học
-        Call<java.util.List<com.example.educonnect.model.Class>> call = apiService.getClasses(teacherId, "Bearer " + token);
-        call.enqueue(new retrofit2.Callback<java.util.List<com.example.educonnect.model.Class>>() {
+        Call<java.util.List<com.example.educonnect.model.Classroom>> call = apiService.getClassroomByTeacherId(teacherId, "Bearer " + token);
+        call.enqueue(new retrofit2.Callback<java.util.List<Classroom>>() {
             @Override
-            public void onResponse(Call<java.util.List<com.example.educonnect.model.Class>> call, Response<java.util.List<com.example.educonnect.model.Class>> response) {
+            public void onResponse(Call<java.util.List<com.example.educonnect.model.Classroom>> call, Response<java.util.List<com.example.educonnect.model.Classroom>> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    java.util.List<com.example.educonnect.model.Class> classes = response.body();
+                    java.util.List<com.example.educonnect.model.Classroom> classes = response.body();
                     if (!classes.isEmpty()) {
                         currentClassId = classes.get(0).getClassId(); // Lấy classId đầu tiên
                         currentClassName = classes.get(0).getClassName(); // Lấy tên lớp
@@ -130,7 +129,7 @@ public class DashboardFragment extends Fragment {
             }
 
             @Override
-            public void onFailure(Call<java.util.List<com.example.educonnect.model.Class>> call, Throwable t) {
+            public void onFailure(Call<java.util.List<com.example.educonnect.model.Classroom>> call, Throwable t) {
                 Toast.makeText(getContext(), "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });

@@ -32,9 +32,12 @@ public class Report implements Serializable {
 
     // Getters
     public String getReportId() { return reportId; }
+
     public String getTitle() { return title; }
+
     public String getClassId() { return classId; }
     public String getClassName() { return className; }
+
     public String getTeacherId() { return teacherId; }
     public String getTeacherName() { return teacherName; }
     public String getTermId() { return termId; }

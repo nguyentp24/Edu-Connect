@@ -2,9 +2,6 @@ package com.example.educonnect.model;
 
 import com.example.educonnect.model.response.LoginResponse;
 
-/**
- * Model đại diện cho thông tin người dùng trong app
- */
 public class User {
     private String userId;
     private String fullName;
@@ -17,10 +14,7 @@ public class User {
         this.email = email;
         this.role = role;
     }
-    
-    /**
-     * Tạo User từ LoginResponse
-     */
+
     public static User fromLoginResponse(LoginResponse response) {
         return new User(
             response.getUserId(),

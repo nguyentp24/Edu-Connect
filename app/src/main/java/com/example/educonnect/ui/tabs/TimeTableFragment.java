@@ -18,6 +18,7 @@ import com.example.educonnect.databinding.FragmentTimetableBinding;
 import com.example.educonnect.model.DayChip;
 import com.example.educonnect.model.ScheduleItem;
 import com.example.educonnect.model.Course;
+import com.example.educonnect.model.Classroom;
 import com.example.educonnect.api.ApiClient;
 import com.example.educonnect.utils.SessionManager;
 import com.example.educonnect.ui.attendance.AttendanceActivity;
@@ -26,17 +27,21 @@ import com.google.android.material.datepicker.MaterialDatePicker;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 public class TimeTableFragment extends Fragment {
 
     private FragmentTimetableBinding vb;
     private final List<DayChip> days = new ArrayList<>();
     private DayChipAdapter chipAdapter;
+    private ScheduleAdapter scheduleAdapter; // Lưu adapter để cập nhật khi có classroomMap
     private Calendar selectedDate;     // ngày đang chọn
     private final Locale vi = new Locale("vi", "VN");
     private final List<Course> allCourses = new ArrayList<>();
+    private Map<String, String> classroomMap = new HashMap<>(); // Cache: classId -> className
 
     @Nullable @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -48,6 +53,7 @@ public class TimeTableFragment extends Fragment {
 
         setupHeaderAndChips();
         // Tải dữ liệu thật khi vào màn
+        fetchClassrooms(); // Fetch classrooms trước để có tên lớp
         fetchCoursesForTeacher();
 
         return vb.getRoot();
@@ -64,16 +70,7 @@ public class TimeTableFragment extends Fragment {
         // Chips RecyclerView: 7 cột, thêm spacing đều giữa các chip
         vb.rvDays.setHasFixedSize(true);
         vb.rvDays.setLayoutManager(new GridLayoutManager(getContext(), 7, GridLayoutManager.VERTICAL, false));
-//        final int spacingPx = dp(0);
-//        vb.rvDays.addItemDecoration(new RecyclerView.ItemDecoration() {
-//            @Override
-//            public void getItemOffsets(android.graphics.Rect outRect, View view, RecyclerView parent, RecyclerView.State state) {
-//                outRect.left = spacingPx;
-//                outRect.right = spacingPx;
-//            }
-//        });
         buildWeekChipsAround(selectedDate);
-
         chipAdapter = new DayChipAdapter(days, pos -> {
             // chọn ngày theo chip
             for (int i = 0; i < days.size(); i++) days.get(i).setSelected(i == pos);
@@ -139,7 +136,7 @@ public class TimeTableFragment extends Fragment {
         }
     }
 
-    /** Tìm index của chip selected */
+    /** Tìm index của day selected */
     private int findSelectedIndex() {
         for (int i = 0; i < days.size(); i++)
             if (days.get(i).isSelected())
@@ -180,17 +177,21 @@ public class TimeTableFragment extends Fragment {
         ));
 
         vb.rvSchedules.setLayoutManager(new LinearLayoutManager(getContext()));
-        vb.rvSchedules.setAdapter(new ScheduleAdapter(list, item -> {
+        scheduleAdapter = new ScheduleAdapter(list, item -> {
             Intent i = new Intent(requireContext(), AttendanceActivity.class);
             i.putExtra("subject", item.getSubject());
             i.putExtra("time", item.getStart() + (item.getEnd() == null || item.getEnd().isEmpty() ? "" : " - " + item.getEnd()));
-            i.putExtra("klass", item.getKlass());
+            i.putExtra("class", item.getClassId());
+            // Truyền tên lớp đã được map từ Timetable (từ API hoặc cache)
+            String className = mapClassIdToName(item.getClassId());
+            i.putExtra("className", className);
             i.putExtra("courseId", item.getCourseId());
             // Nếu chưa điểm danh (API status = unpresent) thì yêu cầu AttendanceActivity tự fetch học sinh
             i.putExtra("shouldFetchStudents", !item.isAttended());
             i.putExtra("isPresent", item.isAttended());
             startActivity(i);
-        }));
+        }, classroomMap);
+        vb.rvSchedules.setAdapter(scheduleAdapter);
     }
 
     /** Gọi API lấy courses theo teacherId */
@@ -262,5 +263,51 @@ public class TimeTableFragment extends Fragment {
     private int dp(int value) {
         float density = getResources().getDisplayMetrics().density;
         return Math.round(value * density);
+    }
+
+    private String mapClassIdToName(String classId) {
+        if (classId == null) return "";
+        // Nếu đã có trong cache, trả về className
+        if (classroomMap.containsKey(classId)) {
+            return classroomMap.get(classId);
+        }
+        // Nếu chưa có, trả về classId (fallback)
+        return classId;
+    }
+
+    private void fetchClassrooms() {
+        SessionManager sm = new SessionManager(requireContext());
+        String teacherId = sm.getTeacherId();
+        String token = sm.getToken();
+        if (teacherId == null || token == null) {
+            return;
+        }
+
+        ApiClient.ApiService api = ApiClient.service();
+        api.getClassroomByTeacherId(teacherId, "Bearer " + token).enqueue(new retrofit2.Callback<List<Classroom>>() {
+            @Override
+            public void onResponse(retrofit2.Call<List<Classroom>> call, retrofit2.Response<List<Classroom>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    classroomMap.clear();
+                    for (Classroom classroom : response.body()) {
+                        if (classroom.getClassId() != null && classroom.getClassName() != null) {
+                            classroomMap.put(classroom.getClassId(), classroom.getClassName());
+                        }
+                    }
+                    // Cập nhật adapter với classroomMap mới
+                    if (scheduleAdapter != null) {
+                        scheduleAdapter.setClassroomMap(classroomMap);
+                    }
+                    // Cập nhật lại danh sách schedule với tên lớp đúng
+                    updateSchedulesForSelectedDate();
+                }
+            }
+
+            @Override
+            public void onFailure(retrofit2.Call<List<Classroom>> call, Throwable t) {
+                // Nếu lỗi, vẫn hiển thị classId như cũ
+                android.util.Log.e("TimeTableFragment", "Failed to fetch classrooms", t);
+            }
+        });
     }
 }

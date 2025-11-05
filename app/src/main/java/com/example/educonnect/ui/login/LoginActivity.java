@@ -67,7 +67,7 @@ public class LoginActivity extends AppCompatActivity {
                     // Sau khi login thành công -> gọi API lấy thông tin Teacher
                     fetchTeacherAndGo(loginResponse.getUserId(), loginResponse.getToken());
                 } else {
-                    Toast.makeText(LoginActivity.this, "Lỗi: Không tìm thấy lớp nào cho giáo viên này (TID: " + teacherId + ")", Toast.LENGTH_LONG).show();
+                    Toast.makeText(LoginActivity.this, "Đăng nhập thất bại: " + response.code(), Toast.LENGTH_SHORT).show();
                 }
             }
 
