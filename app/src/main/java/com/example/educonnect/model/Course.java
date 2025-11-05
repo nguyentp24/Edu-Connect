@@ -10,6 +10,10 @@ public class Course {
     public String dayOfWeek;
     public String status;
     public String subjectName;
+
+    public String getSubjectName() {
+        return subjectName;
+    }
 }
 
 

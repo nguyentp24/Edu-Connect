@@ -5,6 +5,14 @@ public class ClassroomStudent {
     public String fullName;
     public String classId;
     public String dateOfBirth;
+
+    public String getFullName() {
+        return fullName;
+    }
+
+    public String getClassId() {
+        return classId;
+    }
 }
 
 

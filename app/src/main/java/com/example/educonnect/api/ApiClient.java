@@ -1,11 +1,16 @@
 package com.example.educonnect.api;
 
+import com.example.educonnect.model.Class;
+import com.example.educonnect.model.Student;
 import com.example.educonnect.model.Teacher;
 import com.example.educonnect.model.Course;
 import com.example.educonnect.model.ClassroomStudent;
 import com.example.educonnect.model.AttendanceItem;
 import com.example.educonnect.model.request.LoginRequest;
 import com.example.educonnect.model.response.LoginResponse;
+
+import java.util.List;
+
 import retrofit2.Call;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
@@ -14,6 +19,7 @@ import retrofit2.http.GET;
 import retrofit2.http.Header;
 import retrofit2.http.POST;
 import retrofit2.http.Path;
+import retrofit2.http.Query;
 
 /**
  * Cấu hình Retrofit tối thiểu cho gọi API.
@@ -62,6 +68,19 @@ public final class ApiClient {
         // Attendance by courseId: GET /api/Attendance/course/{courseId}
         @GET("api/Attendance/course/{courseId}")
         Call<java.util.List<AttendanceItem>> getAttendanceByCourse(@Path("courseId") String courseId, @Header("Authorization") String bearerToken);
+
+        // Lấy danh sách khóa học theo classId
+        @GET("api/Course/class/{classId}")
+        Call<List<Course>> getCourses(@Path("classId") String classId, @Header("Authorization") String bearerToken);
+
+        // Lấy danh sách điểm danh theo classId: GET /api/Attendance/class/{classId}
+        @GET("api/Attendance/class/{classId}")
+        Call<List<AttendanceItem>> getAttendanceByClass(@Path("classId") String classId, @Header("Authorization") String bearerToken);
+
+        // Lấy danh sách lớp học theo teacherId: GET /api/Classroom?teacherId={teacherId}
+        @GET("api/Classroom")
+        Call<List<Class>> getClasses(@Query("teacherId") String teacherId, @Header("Authorization") String bearerToken);
+
     }
 }
 
