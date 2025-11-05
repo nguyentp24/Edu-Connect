@@ -41,7 +41,7 @@ public class LoginActivity extends AppCompatActivity {
         setLoading(true);
 
         ApiClient.ApiService api = ApiClient.service();
-<<<<<<< HEAD
+
         api.login(new LoginRequest(email, pass)).enqueue(new Callback<LoginResponse>() {
             @Override public void onResponse(Call<LoginResponse> call, Response<LoginResponse> response) {
                 setLoading(false);
@@ -57,14 +57,6 @@ public class LoginActivity extends AppCompatActivity {
                     );
                     // Sau khi login thành công -> gọi API lấy thông tin Teacher
                     fetchTeacherAndGo(loginResponse.userId, loginResponse.token);
-=======
-        api.login(new LoginRequest(email, pass)).enqueue(new Callback<JsonObject>() {
-            @Override public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
-                setLoading(false);
-                if (response.isSuccessful()) {
-                    startActivity(new Intent(LoginActivity.this, MainActivity.class));
-                    finish();
->>>>>>> a2101d922eb195f0445ecfe97caeaf290804ed7c
                 } else {
                     Toast.makeText(LoginActivity.this, "Đăng nhập thất bại: " + response.code(), Toast.LENGTH_SHORT).show();
                 }

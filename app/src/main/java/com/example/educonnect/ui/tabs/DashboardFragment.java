@@ -11,13 +11,16 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.example.educonnect.api.ApiClient;
+import com.example.educonnect.adapter.DashboardAttendanceAdapter;
 import com.example.educonnect.model.AttendanceItem;
 import com.example.educonnect.model.Class;
-import com.example.educonnect.model.ClassroomStudent; // Ensure you're using the right model
+import com.example.educonnect.model.ClassroomStudent;
 import com.example.educonnect.model.Course;
 import com.example.educonnect.databinding.FragmentDashboardBinding;
-import com.example.educonnect.model.Student; // Assuming you are still using the student class for other parts
+import com.example.educonnect.model.Student;
 import com.example.educonnect.utils.SessionManager;
+
+import androidx.recyclerview.widget.LinearLayoutManager;
 
 import java.util.Collections;
 import java.util.Comparator;
@@ -27,13 +30,11 @@ import java.util.stream.Collectors;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-<<<<<<< HEAD
 import java.util.Calendar;
-=======
->>>>>>> a2101d922eb195f0445ecfe97caeaf290804ed7c
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.HashMap;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -44,9 +45,14 @@ public class DashboardFragment extends Fragment {
     private FragmentDashboardBinding vb;
     private List<Course> todayCourses = new ArrayList<>(); // Lưu courses hôm nay
     private String currentClassId; // Lưu classId hiện tại
+    private String currentClassName; // Lưu tên lớp hiện tại
 
-    // Danh sách học sinh vắng mặt
-    private List<Student> absentStudents = new ArrayList<>();
+    // Danh sách học sinh để merge với attendance
+    private Map<String, ClassroomStudent> studentsMap;
+    // Map courseId -> Course để lấy thông tin môn học và thời gian
+    private Map<String, Course> courseMap;
+    // Adapter cho RecyclerView
+    private DashboardAttendanceAdapter attendanceAdapter;
 
     @Nullable
     @Override
@@ -77,7 +83,11 @@ public class DashboardFragment extends Fragment {
 
         vb.tvNotice.setText(getString(com.example.educonnect.R.string.no_absent));
 
-<<<<<<< HEAD
+        // Khởi tạo RecyclerView
+        attendanceAdapter = new DashboardAttendanceAdapter(new ArrayList<>());
+        vb.rvAttendanceList.setLayoutManager(new LinearLayoutManager(getContext()));
+        vb.rvAttendanceList.setAdapter(attendanceAdapter);
+
         // Lấy các lớp và tiết học từ SessionManager
         SessionManager sm = new SessionManager(requireContext());
         String teacherId = sm.getTeacherId();
@@ -102,6 +112,7 @@ public class DashboardFragment extends Fragment {
                     List<Class> classes = response.body();
                     if (!classes.isEmpty()) {
                         currentClassId = classes.get(0).getClassId(); // Lấy classId đầu tiên
+                        currentClassName = classes.get(0).getClassName(); // Lấy tên lớp
                         loadCourses(currentClassId);
                         loadStudents(currentClassId); // Lấy học sinh theo classId
                     }
@@ -133,6 +144,13 @@ public class DashboardFragment extends Fragment {
                     List<Course> courses = response.body();
                     // Lọc courses hôm nay
                     todayCourses = filterTodayCourses(courses);
+                    // Tạo map courseId -> Course
+                    courseMap = new HashMap<>();
+                    for (Course course : todayCourses) {
+                        if (course.courseId != null) {
+                            courseMap.put(course.courseId, course);
+                        }
+                    }
                     // Cập nhật số tiết học hôm nay
                     int todayPeriodsCount = todayCourses.size();
                     vb.tvTodayPeriods.setText(String.valueOf(todayPeriodsCount));
@@ -198,6 +216,8 @@ public class DashboardFragment extends Fragment {
                     sortAttendanceByParticipation(todayAttendance);
                     // Đếm số học sinh có mặt và tổng số
                     updateStudentRatio(todayAttendance);
+                    // Hiển thị danh sách học sinh
+                    displayAttendanceList(todayAttendance);
                 } else {
                     Toast.makeText(getContext(), "Lỗi lấy điểm danh: " + response.message(), Toast.LENGTH_SHORT).show();
                 }
@@ -254,21 +274,16 @@ public class DashboardFragment extends Fragment {
     }
 
     /**
-     * Lưu danh sách học sinh để merge với attendance
-     */
-    private Map<String, ClassroomStudent> studentsMap;
-
-    /**
      * Xử lý attendance với danh sách học sinh
      */
     private void processAttendanceWithStudents(List<ClassroomStudent> students) {
         // Tạo map để tra cứu học sinh theo studentId
-        studentsMap = students.stream()
-                .collect(Collectors.toMap(
-                    s -> s.studentId,
-                    s -> s,
-                    (existing, replacement) -> existing
-                ));
+        studentsMap = new HashMap<>();
+        for (ClassroomStudent student : students) {
+            if (student.studentId != null) {
+                studentsMap.put(student.studentId, student);
+            }
+        }
     }
 
     /**
@@ -286,19 +301,19 @@ public class DashboardFragment extends Fragment {
                 .filter(id -> id != null && !id.isEmpty())
                 .collect(Collectors.toSet());
 
-        // Đếm số học sinh có mặt (học sinh có ít nhất 1 "Có mặt" trong các courses hôm nay)
+        // Đếm số học sinh có mặt hoặc đi trễ (ít nhất 1 lần "Có mặt" hoặc "Đi trễ" trong các courses hôm nay)
         Set<String> presentStudentIds = todayAttendance.stream()
-                .filter(att -> "Có mặt".equals(att.participation))
+                .filter(att -> "Có mặt".equals(att.participation) || "Đi trễ".equals(att.participation))
                 .map(att -> att.studentId)
                 .filter(id -> id != null && !id.isEmpty())
                 .collect(Collectors.toSet());
 
         // Tổng số học sinh (unique)
         int totalStudents = uniqueStudentIds.size();
-        // Số học sinh có mặt (unique)
+        // Số học sinh có mặt hoặc đi trễ (unique)
         int presentCount = presentStudentIds.size();
 
-        // Hiển thị: số có mặt / tổng số
+        // Hiển thị: số (có mặt + đi trễ) / tổng số
         vb.tvStudentRatio.setText(presentCount + "/" + totalStudents);
     }
 
@@ -336,46 +351,83 @@ public class DashboardFragment extends Fragment {
             }
         }
         return todayCourses;
-=======
-        // Tạo danh sách học sinh vắng mặt và hiển thị
-        loadAbsentStudents();
-        displayAbsentStudents();
     }
 
-    private void loadAbsentStudents() {
-        // Thêm các học sinh vắng mặt vào danh sách (ví dụ)
-        absentStudents.add(new Student("Ngô Nhật E", "10A1", "Toán", "7:50 SA - 8:35 SA", "Không có ghi chú"));
-        absentStudents.add(new Student("Ngô Thị F", "10A1", "Toán", "7:50 SA - 8:35 SA", "Không có ghi chú"));
-        absentStudents.add(new Student("Hoàng Mai H", "10A1", "Toán", "7:50 SA - 8:35 SA", "Không có ghi chú"));
-    }
-
-    private void displayAbsentStudents() {
-        // Hiển thị thông tin học sinh vắng mặt vào các khung trong giao diện
-        for (int i = 0; i < absentStudents.size(); i++) {
-            Student student = absentStudents.get(i);
-            // Lấy các View tương ứng với từng học sinh trong layout (item_student1, item_student2, item_student3)
-            // Cập nhật dữ liệu học sinh vào các View
-            if (i == 0) {
-                vb.itemStudent1.tvStudentName.setText(student.getName());
-                vb.itemStudent1.tvStudentClass.setText("Lớp: " + student.getClassName());
-                vb.itemStudent1.tvSubject.setText("Môn: " + student.getSubject());
-                vb.itemStudent1.tvTime.setText("Giờ học: " + student.getTime());
-                vb.itemStudent1.tvNotes.setText(student.getNotes());
-            } else if (i == 1) {
-                vb.itemStudent2.tvStudentName.setText(student.getName());
-                vb.itemStudent2.tvStudentClass.setText("Lớp: " + student.getClassName());
-                vb.itemStudent2.tvSubject.setText("Môn: " + student.getSubject());
-                vb.itemStudent2.tvTime.setText("Giờ học: " + student.getTime());
-                vb.itemStudent2.tvNotes.setText(student.getNotes());
-            } else if (i == 2) {
-                vb.itemStudent3.tvStudentName.setText(student.getName());
-                vb.itemStudent3.tvStudentClass.setText("Lớp: " + student.getClassName());
-                vb.itemStudent3.tvSubject.setText("Môn: " + student.getSubject());
-                vb.itemStudent3.tvTime.setText("Giờ học: " + student.getTime());
-                vb.itemStudent3.tvNotes.setText(student.getNotes());
-            }
+    /**
+     * Hiển thị danh sách attendance trong RecyclerView
+     */
+    private void displayAttendanceList(List<AttendanceItem> attendanceList) {
+        if (studentsMap == null || courseMap == null) {
+            return;
         }
->>>>>>> a2101d922eb195f0445ecfe97caeaf290804ed7c
+
+        List<DashboardAttendanceAdapter.AttendanceDisplayItem> displayItems = new ArrayList<>();
+
+        for (AttendanceItem att : attendanceList) {
+            // Lấy thông tin học sinh
+            ClassroomStudent student = studentsMap.get(att.studentId);
+            if (student == null) continue;
+
+            // Lấy thông tin course
+            Course course = courseMap.get(att.courseId);
+            if (course == null) continue;
+
+            // Format thời gian
+            String timeRange = formatTimeRange(course.startTime, course.endTime);
+
+            // Tạo display item
+            DashboardAttendanceAdapter.AttendanceDisplayItem item =
+                    new DashboardAttendanceAdapter.AttendanceDisplayItem(
+                            student.fullName != null ? student.fullName : "",
+                            currentClassName != null ? currentClassName : "",
+                            course.subjectName != null ? course.subjectName : "",
+                            timeRange,
+                            att.note != null ? att.note : "",
+                            att.participation != null ? att.participation : ""
+                    );
+            displayItems.add(item);
+        }
+
+        // Cập nhật adapter
+        attendanceAdapter = new DashboardAttendanceAdapter(displayItems);
+        vb.rvAttendanceList.setAdapter(attendanceAdapter);
+
+        // Cập nhật thông báo
+        if (displayItems.isEmpty()) {
+            vb.tvNotice.setText(getString(com.example.educonnect.R.string.no_absent));
+        } else {
+            vb.tvNotice.setText("Thông báo học sinh vắng mặt hôm nay");
+        }
+    }
+
+    /**
+     * Format thời gian từ ISO string sang "HH:mm SA/CH - HH:mm SA/CH"
+     */
+    private String formatTimeRange(String startTimeIso, String endTimeIso) {
+        String start = formatTime(startTimeIso);
+        String end = formatTime(endTimeIso);
+        return start + " - " + end;
+    }
+
+    /**
+     * Format thời gian từ ISO string sang "HH:mm SA/CH"
+     */
+    private String formatTime(String iso) {
+        if (iso == null || !iso.contains("T")) return "";
+        try {
+            int t = iso.indexOf('T');
+            int end = Math.min(iso.length(), t + 6); // HH:mm
+            String hm = iso.substring(t + 1, end);
+            String[] sp = hm.split(":");
+            int h = Integer.parseInt(sp[0]);
+            int min = Integer.parseInt(sp[1]);
+            String suffix = h < 12 ? "SA" : "CH";
+            int h12 = h % 12;
+            if (h12 == 0) h12 = 12;
+            return h12 + ":" + (min < 10 ? "0" + min : min) + " " + suffix;
+        } catch (Exception e) {
+            return "";
+        }
     }
 
     private String capitalizeFirst(String s) {
@@ -387,42 +439,5 @@ public class DashboardFragment extends Fragment {
     public void onDestroyView() {
         super.onDestroyView();
         vb = null;
-    }
-
-    // Lớp sinh viên vắng mặt
-    private static class Student {
-        private String name;
-        private String className;
-        private String subject;
-        private String time;
-        private String notes;
-
-        public Student(String name, String className, String subject, String time, String notes) {
-            this.name = name;
-            this.className = className;
-            this.subject = subject;
-            this.time = time;
-            this.notes = notes;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public String getClassName() {
-            return className;
-        }
-
-        public String getSubject() {
-            return subject;
-        }
-
-        public String getTime() {
-            return time;
-        }
-
-        public String getNotes() {
-            return notes;
-        }
     }
 }
