@@ -45,6 +45,26 @@ public class ClassStudentAdapter extends RecyclerView.Adapter<ClassStudentAdapte
         Student s = data.get(pos);
         h.vb.tvName.setText(s.getName());
         h.vb.tvDob.setText(s.getDob());
+
+        h.itemView.setOnClickListener(v -> {
+            Context context = h.itemView.getContext();
+
+            // Lấy studentId thật (nếu có dữ liệu API)
+            String studentId = "";
+            if (fullStudentData != null && pos < fullStudentData.size()) {
+                studentId = fullStudentData.get(pos).getStudentId();
+            }
+
+            if (studentId == null || studentId.isEmpty()) {
+                Toast.makeText(context, "Không tìm thấy ID học sinh này", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Mở màn hình ParentProfileActivity và truyền studentId qua Intent
+            Intent intent = new Intent(context, ParentProfileActivity.class);
+            intent.putExtra(ParentProfileActivity.EXTRA_STUDENT_ID, studentId);
+            context.startActivity(intent);
+        });
     }
 
     @Override public int getItemCount() { return data.size(); }

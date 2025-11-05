@@ -148,6 +148,7 @@ public class DashboardFragment extends Fragment {
         call.enqueue(new Callback<List<Course>>() {
             @Override
             public void onResponse(Call<List<Course>> call, Response<List<Course>> response) {
+                if (!isAdded() || vb == null) return;
                 if (response.isSuccessful() && response.body() != null) {
                     List<Course> courses = response.body();
                     // Lọc courses hôm nay
@@ -300,6 +301,7 @@ public class DashboardFragment extends Fragment {
      * Cập nhật số lượng học sinh có mặt trên tổng số học sinh
      */
     private void updateStudentRatio(List<AttendanceItem> todayAttendance) {
+        if (vb == null || getView() == null || !isAdded()) return;
         if (todayAttendance.isEmpty()) {
             vb.tvStudentRatio.setText("0/0");
             return;
@@ -367,6 +369,8 @@ public class DashboardFragment extends Fragment {
      * Hiển thị danh sách attendance trong RecyclerView
      */
     private void displayAttendanceList(List<AttendanceItem> attendanceList) {
+        // Nếu viewBinding đã bị hủy (fragment không còn hiển thị), không cập nhật UI nữa
+        if (vb == null || !isAdded() || getView() == null) return;
         if (studentsMap == null || courseMap == null) {
             return;
         }

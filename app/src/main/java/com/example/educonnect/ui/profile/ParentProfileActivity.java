@@ -11,10 +11,14 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 import com.example.educonnect.R;
 import com.example.educonnect.api.ApiClient;
 import com.example.educonnect.model.Parent;
+import com.example.educonnect.utils.SessionManager;
 import com.google.android.material.appbar.MaterialToolbar;
 
 import retrofit2.Call;
@@ -35,12 +39,14 @@ public class ParentProfileActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_parent_profile);
 
+
         // 1. Ánh xạ các thành phần giao diện từ file XML
         setupViews();
 
         // 2. Lấy dữ liệu cần thiết: studentId từ Intent và authToken từ bộ nhớ
         String studentId = getIntent().getStringExtra(EXTRA_STUDENT_ID);
-        String authToken = getTokenFromPreferences(); // Lấy token của giáo viên đã đăng nhập
+        SessionManager sm = new SessionManager(this);
+        String authToken = sm.getToken(); // Lấy token của giáo viên đã đăng nhập
 
         // 3. Kiểm tra dữ liệu đầu vào
         if (studentId == null || studentId.isEmpty()) {

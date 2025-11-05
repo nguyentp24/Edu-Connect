@@ -46,5 +46,10 @@
             android:exported="false"
             android:theme="@style/Theme.EduConnect"/>
 
+        <activity
+            android:name="com.example.educonnect.ui.profile.ParentProfileActivity"
+            android:exported="false"
+            android:theme="@style/Theme.EduConnect" />
+
     </application>
 </manifest>
