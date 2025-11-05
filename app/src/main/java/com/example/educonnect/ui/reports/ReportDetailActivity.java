@@ -3,15 +3,18 @@ package com.example.educonnect.ui.reports;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.educonnect.R;
 import com.example.educonnect.api.ApiClient;
 import com.example.educonnect.databinding.ActivityReportDetailBinding;
 import com.example.educonnect.model.ReportBotRequest;
 import com.example.educonnect.model.Term;
 import com.example.educonnect.model.Report;
+import com.example.educonnect.utils.SessionManager; // <-- THÊM IMPORT NÀY
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -36,8 +39,9 @@ public class ReportDetailActivity extends AppCompatActivity {
         vb = ActivityReportDetailBinding.inflate(getLayoutInflater());
         setContentView(vb.getRoot());
 
-        SharedPreferences prefs = getSharedPreferences("EduConnectApp", Context.MODE_PRIVATE);
-        authToken = prefs.getString("token", null);
+        // === THAY THẾ SharedPreferences BẰNG SessionManager ===
+        SessionManager sessionManager = new SessionManager(this);
+        authToken = sessionManager.getToken();
 
         if (authToken == null) {
             Toast.makeText(this, "Lỗi: Phiên đăng nhập hết hạn.", Toast.LENGTH_LONG).show();
@@ -80,11 +84,13 @@ public class ReportDetailActivity extends AppCompatActivity {
         vb.tvStatAbsences.setVisibility(View.GONE);
     }
 
+    // === FIX LỖI 401: Thêm tiền tố "Bearer " ===
     private void fetchTermDetails() {
         String termId = basicReport.getTermId();
         if (termId == null) return;
 
-        Call<Term> call = ApiClient.service().getTermDetails(termId, authToken);
+        // Thêm tiền tố "Bearer "
+        Call<Term> call = ApiClient.service().getTermDetails(termId, "Bearer " + authToken);
         call.enqueue(new Callback<Term>() {
             @Override
             public void onResponse(Call<Term> call, Response<Term> response) {
@@ -102,17 +108,21 @@ public class ReportDetailActivity extends AppCompatActivity {
                 }
             }
             @Override
-            public void onFailure(Call<Term> call, Throwable t) { }
+            public void onFailure(Call<Term> call, Throwable t) {
+                Log.e("ReportDetailActivity", "Lỗi tải Term: " + t.getMessage());
+            }
         });
     }
 
+    // === FIX LỖI 401: Thêm tiền tố "Bearer " ===
     private void fetchReportStats() {
         String termId = basicReport.getTermId();
         String classId = basicReport.getClassId();
         if (termId == null || classId == null) return;
 
         ReportBotRequest botRequest = new ReportBotRequest(termId, classId);
-        Call<String> call = ApiClient.service().generateReportDetails(botRequest, authToken);
+        // Thêm tiền tố "Bearer "
+        Call<String> call = ApiClient.service().generateReportDetails(botRequest, "Bearer " + authToken);
 
         call.enqueue(new Callback<String>() {
             @Override
@@ -131,6 +141,7 @@ public class ReportDetailActivity extends AppCompatActivity {
                     vb.tvStatAbsences.setVisibility(View.VISIBLE);
                 } else {
                     Toast.makeText(ReportDetailActivity.this, "Không thể tải chi tiết thống kê", Toast.LENGTH_SHORT).show();
+                    Log.e("ReportDetailActivity", "Lỗi thống kê: " + response.code());
                 }
             }
 
@@ -140,6 +151,7 @@ public class ReportDetailActivity extends AppCompatActivity {
             }
         });
     }
+    // ... (formatDisplayDate và parseStat giữ nguyên) ...
 
     private String formatDisplayDate(String apiDate) {
         if (apiDate == null) return "N/A";
