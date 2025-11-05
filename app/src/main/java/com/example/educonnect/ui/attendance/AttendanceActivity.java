@@ -12,26 +12,22 @@ import com.example.educonnect.databinding.ActivityAttendanceBinding;
 import com.example.educonnect.model.Student;
 import com.example.educonnect.model.ClassroomStudent;
 import com.example.educonnect.model.AttendanceItem;
-import com.example.educonnect.model.Classroom;
 import com.example.educonnect.model.request.CourseStatusRequest;
 import com.example.educonnect.api.ApiClient;
 import com.example.educonnect.utils.SessionManager;
 import okhttp3.ResponseBody;
 import java.util.HashMap;
 import java.util.Map;
-
 import java.util.ArrayList;
-import java.util.List;
 
 public class AttendanceActivity extends AppCompatActivity {
 
     private ActivityAttendanceBinding vb;
     private final ArrayList<Student> students = new ArrayList<>();
     private StudentAdapter adapter;
-    private String courseId; // Lưu courseId để dùng khi lưu
-    private boolean isPresent; // Lưu trạng thái course có attendance hay không
-    private Map<String, String> classroomMap = new HashMap<>(); // Cache: classId -> className
-    private String currentClassId; // Lưu classId hiện tại để cập nhật UI
+    private String courseId;
+    private boolean isPresent;
+    private String currentClassId;
 
     private Student.Status mapParticipationToStatus(String participation) {
         if (participation == null) return Student.Status.ABSENT;
@@ -52,54 +48,6 @@ public class AttendanceActivity extends AppCompatActivity {
         }
     }
 
-    private String mapClassIdToName(String classId) {
-        if (classId == null) return "";
-        // Nếu đã có trong cache, trả về className
-        if (classroomMap.containsKey(classId)) {
-            return classroomMap.get(classId);
-        }
-        // Nếu chưa có, trả về classId (fallback)
-        return classId;
-    }
-    
-    private void fetchClassrooms() {
-        SessionManager sm = new SessionManager(this);
-        String teacherId = sm.getTeacherId();
-        String token = sm.getToken();
-        if (teacherId == null || token == null) {
-            return;
-        }
-        
-        ApiClient.ApiService api = ApiClient.service();
-        api.getClassroomByTeacherId(teacherId, "Bearer " + token).enqueue(new retrofit2.Callback<List<Classroom>>() {
-            @Override
-            public void onResponse(retrofit2.Call<List<Classroom>> call, retrofit2.Response<List<Classroom>> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    classroomMap.clear();
-                    for (Classroom classroom : response.body()) {
-                        if (classroom.getClassId() != null && classroom.getClassName() != null) {
-                            classroomMap.put(classroom.getClassId(), classroom.getClassName());
-                        }
-                    }
-                    // Cập nhật lại UI với tên lớp đúng
-                    updateClassDisplay();
-                }
-            }
-
-            @Override
-            public void onFailure(retrofit2.Call<List<Classroom>> call, Throwable t) {
-                // Nếu lỗi, vẫn hiển thị classId như cũ
-                android.util.Log.e("AttendanceActivity", "Failed to fetch classrooms", t);
-            }
-        });
-    }
-    
-    private void updateClassDisplay() {
-        if (currentClassId != null && vb != null) {
-            String classDisplay = mapClassIdToName(currentClassId);
-            vb.tvClass.setText(getString(R.string.class_fmt, classDisplay));
-        }
-    }
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -108,12 +56,13 @@ public class AttendanceActivity extends AppCompatActivity {
 
         String subject = getIntent().getStringExtra("subject");
         String time    = getIntent().getStringExtra("time");
-        String klass   = getIntent().getStringExtra("class");
+        String className = getIntent().getStringExtra("className");
+        this.currentClassId = getIntent().getStringExtra("class");
+        
         vb.tvSubject.setText(getString(R.string.subject_fmt, subject != null ? subject : "—"));
         vb.tvTime.setText(getString(R.string.time_fmt, time != null ? time : "—"));
-        // Ưu tiên dùng className từ Timetable, nếu không có thì dùng classId
-//        String classDisplay = className != null ? className : (currentClassId != null ? currentClassId : "—");
-//        vb.tvClass.setText(getString(R.string.class_fmt, classDisplay));
+        String classDisplay = className != null ? className : (currentClassId != null ? currentClassId : "—");
+        vb.tvClass.setText(getString(R.string.class_fmt, classDisplay));
 
         vb.btnBack.setOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
 
@@ -121,22 +70,17 @@ public class AttendanceActivity extends AppCompatActivity {
         this.isPresent = getIntent().getBooleanExtra("isPresent", false);
         boolean shouldFetch = getIntent().getBooleanExtra("shouldFetchStudents", false);
         
-        // Nếu đã có className từ Timetable thì không cần fetch, chỉ fetch nếu chưa có
-//        if (className == null) {
-//            // Fetch danh sách classrooms để map classId -> className
-//            fetchClassrooms();
-//        }
-
-        if (isPresent && courseId != null) {
-            // Nếu đã điểm danh → gọi API attendance để lấy dữ liệu
-            fetchAttendanceData(courseId, currentClassId);
-        } else if (shouldFetch && currentClassId != null) {
-            // Nếu chưa điểm danh → gọi API classroom để lấy danh sách học sinh
-            fetchStudents(currentClassId);
-        }
+        // Khởi tạo RecyclerView và adapter
         vb.rvStudents.setLayoutManager(new LinearLayoutManager(this));
         adapter = new StudentAdapter(students, () -> {});
         vb.rvStudents.setAdapter(adapter);
+        
+        // Fetch students để hiển thị
+        if (isPresent && courseId != null) {
+            fetchAttendanceData(courseId, currentClassId);
+        } else if (shouldFetch && currentClassId != null) {
+            fetchStudents(currentClassId);
+        }
 
         vb.btnSave.setOnClickListener(v -> {
             if (courseId == null || courseId.isEmpty()) {
@@ -150,7 +94,7 @@ public class AttendanceActivity extends AppCompatActivity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, android.content.Intent data) {
-      super.onActivityResult(requestCode, resultCode, data);
+        super.onActivityResult(requestCode, resultCode, data);
         if (resultCode == RESULT_OK && data != null) {
             String studentName = data.getStringExtra("student_name");
             String note = data.getStringExtra("note");
@@ -175,7 +119,6 @@ public class AttendanceActivity extends AppCompatActivity {
         }
     }
 
-
     private void fetchStudents(String classId) {
         students.clear();
         SessionManager sm = new SessionManager(this);
@@ -194,8 +137,7 @@ public class AttendanceActivity extends AppCompatActivity {
             }
 
             @Override public void onFailure(retrofit2.Call<java.util.List<ClassroomStudent>> call, Throwable t) {
-                // fallback giữ list rỗng, hoặc bạn có thể mock
-                if (adapter != null) adapter.notifyDataSetChanged();
+                // fallback giữ list rỗng
             }
         });
     }
@@ -248,7 +190,6 @@ public class AttendanceActivity extends AppCompatActivity {
             }
 
             @Override public void onFailure(retrofit2.Call<java.util.List<AttendanceItem>> call, Throwable t) {
-                if (adapter != null) adapter.notifyDataSetChanged();
             }
         });
     }
