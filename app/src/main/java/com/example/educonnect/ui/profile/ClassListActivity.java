@@ -51,7 +51,7 @@ public class ClassListActivity extends AppCompatActivity {
 
         // RecyclerView
         vb.rvStudents.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new ClassStudentAdapter(students);
+        adapter = new ClassStudentAdapter(students,new ArrayList<>());
         vb.rvStudents.setAdapter(adapter);
 
         // Mock data ban đầu
