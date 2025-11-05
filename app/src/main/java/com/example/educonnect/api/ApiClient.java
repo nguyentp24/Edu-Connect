@@ -1,12 +1,13 @@
 package com.example.educonnect.api;
 
-import com.example.educonnect.model.Teacher;
 import com.example.educonnect.model.Course;
 import com.example.educonnect.model.ClassroomStudent;
 import com.example.educonnect.model.AttendanceItem;
 import com.example.educonnect.model.request.LoginRequest;
 import com.example.educonnect.model.request.CourseStatusRequest;
 import com.example.educonnect.model.response.LoginResponse;
+import com.google.gson.JsonObject;
+import com.example.educonnect.model.request.LoginRequest;
 import retrofit2.Call;
 import okhttp3.ResponseBody;
 import retrofit2.Retrofit;
@@ -51,7 +52,12 @@ public final class ApiClient {
         @POST("api/Auth/Login")
         Call<LoginResponse> login(@Body LoginRequest body);
 
-        // Teacher detail by userId: GET /api/Teacher/{userId}
+        @GET("api/teacher/parent-profile/{studentId}")
+        Call<Parent> getParentProfileForTeacher(
+                @Header("Authorization") String authToken,
+                @Path("studentId") String studentId
+        );
+
         @GET("api/Teacher/{userId}")
         Call<Teacher> getTeacher(@Path("userId") String userId, @Header("Authorization") String bearerToken);
 

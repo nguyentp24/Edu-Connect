@@ -1,5 +1,7 @@
 package com.example.educonnect.model;
 
+import com.google.gson.annotations.SerializedName;
+
 public class Student {
     private String name;
     private String studentId; // ID từ API classroom

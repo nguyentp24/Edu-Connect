@@ -1,12 +1,17 @@
 package com.example.educonnect.adapter;
 
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
+import android.widget.Toast;
+
+import android.content.Context;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.educonnect.databinding.ItemStudentSimpleBinding;
+import com.example.educonnect.ui.profile.ParentProfileActivity;
 
 import java.util.List;
 
@@ -23,8 +28,11 @@ public class ClassStudentAdapter extends RecyclerView.Adapter<ClassStudentAdapte
 
     private final List<Student> data;
 
-    public ClassStudentAdapter(List<Student> d){
+    private final List<com.example.educonnect.model.Student> fullStudentData;
+
+    public ClassStudentAdapter(List<Student> d,List<com.example.educonnect.model.Student> fullData){
         data = d;
+        this.fullStudentData = fullData;
     }
 
     @NonNull @Override
