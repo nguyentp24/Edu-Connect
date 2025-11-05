@@ -51,4 +51,17 @@
     <string name="login_sign_in_google">Đăng Nhập Với Google</string>
     <string name="login_illustration_desc">login illustration</string>
 
+    <!-- Report screen -->
+    <string name="report_title">Loại Báo Cáo</string>
+    <string name="report_subtitle">Chọn loại báo cáo và thời gian để tạo báo cáo tự động</string>
+    <string name="report_week">Theo Tuần</string>
+    <string name="report_month">Theo Tháng</string>
+    <string name="report_semester">Theo Kỳ</string>
+    <string name="report_school_year">Theo Năm Học</string>
+    <string name="report_choose_week">Chọn tuần báo cáo</string>
+    <string name="report_choose_month">Chọn tháng báo cáo</string>
+    <string name="report_choose_semester">Chọn học kỳ</string>
+    <string name="report_choose_school_year">Chọn năm học</string>
+    <string name="create_report">Tạo Báo Cáo</string>
+    <string name="report_history">Lịch Sử Báo Cáo</string>
 </resources>

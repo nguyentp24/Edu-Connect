@@ -1,6 +1,8 @@
 package com.example.educonnect.ui.login;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -9,6 +11,14 @@ import android.widget.Toast;
 import com.example.educonnect.databinding.ActivityLoginBinding;
 import com.example.educonnect.ui.main.MainActivity;
 import com.example.educonnect.api.ApiClient;
+import com.example.educonnect.model.Classroom;
+import com.example.educonnect.model.Teacher;
+
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+
+import java.util.List;
+
 import com.example.educonnect.model.request.LoginRequest;
 import com.example.educonnect.model.response.LoginResponse;
 import com.example.educonnect.utils.SessionManager;
@@ -37,7 +47,6 @@ public class LoginActivity extends AppCompatActivity {
             Toast.makeText(this, "Vui lòng nhập email và mật khẩu", Toast.LENGTH_SHORT).show();
             return;
         }
-
         setLoading(true);
 
         ApiClient.ApiService api = ApiClient.service();
@@ -58,13 +67,13 @@ public class LoginActivity extends AppCompatActivity {
                     // Sau khi login thành công -> gọi API lấy thông tin Teacher
                     fetchTeacherAndGo(loginResponse.getUserId(), loginResponse.getToken());
                 } else {
-                    Toast.makeText(LoginActivity.this, "Đăng nhập thất bại: " + response.code(), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(LoginActivity.this, "Lỗi: Không tìm thấy lớp nào cho giáo viên này (TID: " + teacherId + ")", Toast.LENGTH_LONG).show();
                 }
             }
 
             @Override public void onFailure(Call<LoginResponse> call, Throwable t) {
                 setLoading(false);
-                Toast.makeText(LoginActivity.this, "Lỗi mạng: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                Toast.makeText(LoginActivity.this, "Lỗi mạng (GetClass): " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
     }

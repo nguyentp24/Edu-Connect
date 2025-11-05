@@ -1,6 +1,8 @@
 package com.example.educonnect.model;
 
-public class Teacher {
+public class Teacher implements Serializable {
+    // Getters
+    public class Teacher {
     private String teacherId;
     private String userId;
     private String subjectId;
