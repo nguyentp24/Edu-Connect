@@ -9,6 +9,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.educonnect.databinding.ItemScheduleBinding;
 import com.example.educonnect.model.ScheduleItem;
 import java.util.List;
+import java.util.Map;
 
 public class ScheduleAdapter extends RecyclerView.Adapter<ScheduleAdapter.VH> {
 
@@ -16,10 +17,23 @@ public class ScheduleAdapter extends RecyclerView.Adapter<ScheduleAdapter.VH> {
 
     private final List<ScheduleItem> data;
     private final OnItemClick onItemClick;
+    private Map<String, String> classroomMap; // Map: classId -> className
 
     public ScheduleAdapter(List<ScheduleItem> data, OnItemClick onItemClick) {
         this.data = data;
         this.onItemClick = onItemClick;
+        this.classroomMap = null;
+    }
+
+    public ScheduleAdapter(List<ScheduleItem> data, OnItemClick onItemClick, Map<String, String> classroomMap) {
+        this.data = data;
+        this.onItemClick = onItemClick;
+        this.classroomMap = classroomMap;
+    }
+    
+    public void setClassroomMap(Map<String, String> classroomMap) {
+        this.classroomMap = classroomMap;
+        notifyDataSetChanged(); // Cập nhật lại UI khi có classroomMap
     }
 
     @NonNull @Override public VH onCreateViewHolder(@NonNull ViewGroup p, int v) {
@@ -32,7 +46,7 @@ public class ScheduleAdapter extends RecyclerView.Adapter<ScheduleAdapter.VH> {
         h.vb.txtTimeEnd.setText(it.getEnd());
         h.vb.txtSubject.setText(it.getSubject());
         h.vb.txtStatus.setText(it.getStatus());
-        h.vb.txtClass.setText("Lớp: " + mapClassIdToName(it.getKlass()));
+        h.vb.txtClass.setText("Lớp: " + mapClassIdToName(it.getClassId()));
         // Cập nhật trạng thái theo thời gian
         updateTimeStatus(h, it);
         // Attendance
@@ -106,14 +120,12 @@ public class ScheduleAdapter extends RecyclerView.Adapter<ScheduleAdapter.VH> {
 
     private String mapClassIdToName(String classId) {
         if (classId == null) return "";
-        switch (classId) {
-            case "class01": return "10A1";
-            case "class02": return "11A2";
-            case "class03": return "12A2";
-            case "class04": return "12A1";
-            case "class05": return "12A6";
-            default: return classId;
+        // Nếu đã có classroomMap, dùng nó
+        if (classroomMap != null && classroomMap.containsKey(classId)) {
+            return classroomMap.get(classId);
         }
+        // Fallback: trả về classId
+        return classId;
     }
 }
 

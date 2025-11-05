@@ -1,19 +1,23 @@
 package com.example.educonnect.model;
 
 public class ScheduleItem {
-    private String start, end;          // hiển thị
-    private String startIso, endIso;    // ISO để tính toán
+    private String start, end;
+    private String startIso, endIso;
     private String subject;
-    private String klass;       // "12A1"
-    private String status;      // "Đã kết thúc"...
-    private boolean attended;   // true = đã điểm danh
-    private String courseId;   // courseId để gọi API attendance
+    private String classId;
+    private String status;
+    private boolean attended;
+    private String courseId;
 
-    public ScheduleItem(String start, String end, String startIso, String endIso, String subject, String klass, String status, boolean attended, String courseId) {
-        this.start = start; this.end = end;
-        this.startIso = startIso; this.endIso = endIso;
-        this.subject = subject; this.klass = klass;
-        this.status = status; this.attended = attended;
+    public ScheduleItem(String start, String end, String startIso, String endIso, String subject, String classId, String status, boolean attended, String courseId) {
+        this.start = start;
+        this.end = end;
+        this.startIso = startIso;
+        this.endIso = endIso;
+        this.subject = subject;
+        this.classId = classId;
+        this.status = status;
+        this.attended = attended;
         this.courseId = courseId;
     }
 
@@ -57,12 +61,12 @@ public class ScheduleItem {
         this.subject = subject;
     }
 
-    public String getKlass() {
-        return klass;
+    public String getClassId() {
+        return classId;
     }
 
-    public void setKlass(String klass) {
-        this.klass = klass;
+    public void setClassId(String classId) {
+        this.classId = classId;
     }
 
     public String getStatus() {

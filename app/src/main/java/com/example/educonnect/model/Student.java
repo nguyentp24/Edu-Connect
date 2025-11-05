@@ -4,7 +4,7 @@ import com.google.gson.annotations.SerializedName;
 
 public class Student {
     private String name;
-    private String studentId; // ID từ API classroom
+    private String studentId;
     private Status status;
     private String note;
     private String homework;
