@@ -108,12 +108,12 @@ public class AttendanceActivity extends AppCompatActivity {
 
         String subject = getIntent().getStringExtra("subject");
         String time    = getIntent().getStringExtra("time");
-        String klass   = getIntent().getStringExtra("klass");
+        String klass   = getIntent().getStringExtra("class");
         vb.tvSubject.setText(getString(R.string.subject_fmt, subject != null ? subject : "—"));
         vb.tvTime.setText(getString(R.string.time_fmt, time != null ? time : "—"));
         // Ưu tiên dùng className từ Timetable, nếu không có thì dùng classId
-        String classDisplay = className != null ? className : (currentClassId != null ? currentClassId : "—");
-        vb.tvClass.setText(getString(R.string.class_fmt, classDisplay));
+//        String classDisplay = className != null ? className : (currentClassId != null ? currentClassId : "—");
+//        vb.tvClass.setText(getString(R.string.class_fmt, classDisplay));
 
         vb.btnBack.setOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
 
@@ -122,10 +122,10 @@ public class AttendanceActivity extends AppCompatActivity {
         boolean shouldFetch = getIntent().getBooleanExtra("shouldFetchStudents", false);
         
         // Nếu đã có className từ Timetable thì không cần fetch, chỉ fetch nếu chưa có
-        if (className == null) {
-            // Fetch danh sách classrooms để map classId -> className
-            fetchClassrooms();
-        }
+//        if (className == null) {
+//            // Fetch danh sách classrooms để map classId -> className
+//            fetchClassrooms();
+//        }
 
         if (isPresent && courseId != null) {
             // Nếu đã điểm danh → gọi API attendance để lấy dữ liệu

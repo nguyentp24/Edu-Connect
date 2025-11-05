@@ -165,7 +165,12 @@ public class TimeTableFragment extends Fragment {
                     String start = formatTime(c.getStartTime());
                     String end   = formatTime(c.getEndTime());
                     boolean attended = c.getStatus() != null && c.getStatus().equalsIgnoreCase("present");
-                    list.add(new ScheduleItem(start, end, c.getStartTime(), c.getEndTime(), c.getSubjectName(), c.getClassId(), "", attended, c.getCourseId()));
+                    ScheduleItem item = new ScheduleItem(start, end, c.getStartTime(), c.getEndTime(), c.getSubjectName(), c.getClassId(), "", attended, c.getCourseId());
+                    // Set className từ classroomMap nếu có
+                    if (c.getClassId() != null && classroomMap.containsKey(c.getClassId())) {
+                        item.setClassName(classroomMap.get(c.getClassId()));
+                    }
+                    list.add(item);
                 }
             }
         }
@@ -182,8 +187,8 @@ public class TimeTableFragment extends Fragment {
             i.putExtra("subject", item.getSubject());
             i.putExtra("time", item.getStart() + (item.getEnd() == null || item.getEnd().isEmpty() ? "" : " - " + item.getEnd()));
             i.putExtra("class", item.getClassId());
-            // Truyền tên lớp đã được map từ Timetable (từ API hoặc cache)
-            String className = mapClassIdToName(item.getClassId());
+            // Truyền tên lớp từ ScheduleItem (đã được set từ API)
+            String className = item.getClassName() != null ? item.getClassName() : item.getClassId();
             i.putExtra("className", className);
             i.putExtra("courseId", item.getCourseId());
             // Nếu chưa điểm danh (API status = unpresent) thì yêu cầu AttendanceActivity tự fetch học sinh
@@ -210,6 +215,8 @@ public class TimeTableFragment extends Fragment {
                 if (response.isSuccessful() && response.body() != null) {
                     allCourses.addAll(response.body());
                 }
+                // Sau khi có courses, fetch classrooms cho từng classId
+                fetchClassroomsForCourses();
                 updateSchedulesForSelectedDate();
             }
 
@@ -309,5 +316,80 @@ public class TimeTableFragment extends Fragment {
                 android.util.Log.e("TimeTableFragment", "Failed to fetch classrooms", t);
             }
         });
+    }
+
+    /** Gọi API getClassroom cho từng classId unique trong danh sách courses */
+    private void fetchClassroomsForCourses() {
+        SessionManager sm = new SessionManager(requireContext());
+        String token = sm.getToken();
+        if (token == null) {
+            return;
+        }
+
+        // Lấy tất cả classId unique từ danh sách courses
+        java.util.Set<String> classIds = new java.util.HashSet<>();
+        for (Course course : allCourses) {
+            if (course.getClassId() != null && !course.getClassId().isEmpty()) {
+                classIds.add(course.getClassId());
+            }
+        }
+
+        if (classIds.isEmpty()) {
+            return;
+        }
+
+        // Gọi API getClassroom cho từng classId
+        ApiClient.ApiService api = ApiClient.service();
+        final int[] completedCount = {0};
+        final int totalCount = classIds.size();
+
+        for (String classId : classIds) {
+            api.getClassroom(classId, "Bearer " + token).enqueue(new retrofit2.Callback<Classroom>() {
+                @Override
+                public void onResponse(retrofit2.Call<Classroom> call, retrofit2.Response<Classroom> response) {
+                    synchronized (classroomMap) {
+                        completedCount[0]++;
+                        if (response.isSuccessful() && response.body() != null) {
+                            Classroom classroom = response.body();
+                            if (classroom.getClassId() != null && classroom.getClassName() != null) {
+                                classroomMap.put(classroom.getClassId(), classroom.getClassName());
+                            }
+                        }
+                        // Khi tất cả đã hoàn thành, cập nhật UI
+                        if (completedCount[0] == totalCount) {
+                            if (getActivity() != null) {
+                                getActivity().runOnUiThread(() -> {
+                                    // Cập nhật adapter với classroomMap mới
+                                    if (scheduleAdapter != null) {
+                                        scheduleAdapter.setClassroomMap(classroomMap);
+                                    }
+                                    // Cập nhật lại danh sách schedule với tên lớp đúng
+                                    updateSchedulesForSelectedDate();
+                                });
+                            }
+                        }
+                    }
+                }
+
+                @Override
+                public void onFailure(retrofit2.Call<Classroom> call, Throwable t) {
+                    synchronized (classroomMap) {
+                        completedCount[0]++;
+                        android.util.Log.e("TimeTableFragment", "Failed to fetch classroom: " + call.request().url(), t);
+                        // Khi tất cả đã hoàn thành (kể cả lỗi), vẫn cập nhật UI
+                        if (completedCount[0] == totalCount) {
+                            if (getActivity() != null) {
+                                getActivity().runOnUiThread(() -> {
+                                    if (scheduleAdapter != null) {
+                                        scheduleAdapter.setClassroomMap(classroomMap);
+                                    }
+                                    updateSchedulesForSelectedDate();
+                                });
+                            }
+                        }
+                    }
+                }
+            });
+        }
     }
 }

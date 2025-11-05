@@ -5,6 +5,7 @@ public class ScheduleItem {
     private String startIso, endIso;
     private String subject;
     private String classId;
+    private String className; // Tên lớp từ API
     private String status;
     private boolean attended;
     private String courseId;
@@ -16,6 +17,7 @@ public class ScheduleItem {
         this.endIso = endIso;
         this.subject = subject;
         this.classId = classId;
+        this.className = null; // Sẽ được set từ API
         this.status = status;
         this.attended = attended;
         this.courseId = courseId;
@@ -67,6 +69,14 @@ public class ScheduleItem {
 
     public void setClassId(String classId) {
         this.classId = classId;
+    }
+
+    public String getClassName() {
+        return className;
+    }
+
+    public void setClassName(String className) {
+        this.className = className;
     }
 
     public String getStatus() {

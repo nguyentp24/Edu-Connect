@@ -46,7 +46,12 @@ public class ScheduleAdapter extends RecyclerView.Adapter<ScheduleAdapter.VH> {
         h.vb.txtTimeEnd.setText(it.getEnd());
         h.vb.txtSubject.setText(it.getSubject());
         h.vb.txtStatus.setText(it.getStatus());
-        h.vb.txtClass.setText("Lớp: " + mapClassIdToName(it.getClassId()));
+        // Ưu tiên dùng className từ ScheduleItem, nếu không có thì dùng classroomMap
+        String className = it.getClassName();
+        if (className == null || className.isEmpty()) {
+            className = mapClassIdToName(it.getClassId());
+        }
+        h.vb.txtClass.setText("Lớp: " + className);
         // Cập nhật trạng thái theo thời gian
         updateTimeStatus(h, it);
         // Attendance
